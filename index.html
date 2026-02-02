@@ -659,6 +659,50 @@
             width: 350px;
             border-top: 5px solid #3498db;
         }
+            /* === iPad 與平板專用修正補丁 (請貼在 </style> 之前) === */
+    
+    /* 1. 強制導航列不換行，空間不足時可以左右滑動 */
+    .navbar {
+        flex-wrap: nowrap !important; /* 禁止折行 */
+        overflow-x: auto; /* 如果真的太窄，允許左右滑動 */
+        padding: 5px 10px !important; /* 減少邊距 */
+        gap: 5px !important; /* 減少元件間距 */
+    }
+
+    /* 2. 修正按鈕樣式：字體變小、內距變窄、禁止文字換行 */
+    .tab-btn {
+        white-space: nowrap !important; /* 關鍵：強制文字不換行！ */
+        font-size: 13px !important;     /* 字體改小一點 */
+        padding: 6px 10px !important;   /* 按鈕變瘦一點 */
+        min-width: auto !important;     /* 取消最小寬度限制 */
+    }
+
+    /* 3. 修正左上角標題：字體縮小，避免佔太多位子 */
+    .nav-title {
+        font-size: 16px !important;
+        white-space: nowrap !important;
+        margin-right: 5px !important;
+    }
+
+    /* 4. 修正右邊資訊列：字體縮小 */
+    .nav-info {
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        display: flex;
+        gap: 3px;
+    }
+    
+    /* 5. 隱藏不必要的裝飾 (如果螢幕真的很小) */
+    @media (max-width: 1024px) {
+        .nav-title { 
+            font-size: 14px !important; 
+        }
+        /* 如果還是太擠，把標題裡的 (V30 加密版) 隱藏起來，只留圖示 */
+        .nav-title span {
+            display: none; 
+        }
+    }
+
     </style>
 </head>
 <body>
@@ -2914,4 +2958,5 @@
 </script>
 </body>
 </html>
+
 
