@@ -2809,14 +2809,11 @@
         }
     }
 
-        // === 改良版：iPad 專用 PDF 下載函式 ===
+    // === 最終改良版：iPad 專用 PDF 下載函式 ===
     async function downloadPDF(filename, mode) {
         const { jsPDF } = window.jspdf;
         const printContainer = document.getElementById('print-container');
         const contentDiv = document.getElementById('print-body-content');
-        
-        // 1. 準備截圖環境
-        printContainer.classList.add('pdf-generating');
         
         // 鎖定按鈕防止重複點擊
         const activeBtn = document.activeElement;
@@ -2824,22 +2821,34 @@
         activeBtn.innerText = "⏳ 處理中...";
         activeBtn.disabled = true;
 
-        // 偵測是否為行動裝置 (iPad/iPhone/Android)
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        // iPad 關鍵設定：降低解析度以防記憶體崩潰
-        // 電腦用 2 (高畫質)，平板手機用 1 (標準)
-        const renderScale = isMobile ? 1 : 2; 
+        // 1. 精準偵測 iOS 裝置 (包含 iPadOS 13+ 的桌面模式 iPad)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+        // === iPad/iPhone 專屬路徑 (直接使用原生功能) ===
+        if (isIOS) {
+            // 恢復按鈕狀態
+            activeBtn.innerText = originalText;
+            activeBtn.disabled = false;
+
+            // 顯示操作教學 (不再是錯誤訊息)
+            alert("💡 【iPad 存檔教學】\n\nApple 限制網頁直接下載 PDF，請依下列步驟存檔：\n\n1. 點擊「好」開啟視窗\n2. 在預覽畫面「雙指放大」\n3. 點擊右上角分享圖示，選擇「儲存到檔案」");
+            
+            // 直接呼叫列印，這是 iOS 產生 PDF 畫質最好、最穩定的方式
+            window.print();
+            return; // 結束函式，不執行後面的繪圖
+        }
+
+        // === 電腦/Android 裝置路徑 (使用繪圖轉 PDF) ===
         try {
-            // 等待一下，讓 DOM 完全渲染
+            printContainer.classList.add('pdf-generating');
+            
+            // 等待 DOM 渲染
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const doc = new jsPDF('p', 'mm', 'a4'); 
             const pdfWidth = doc.internal.pageSize.getWidth(); 
-            const pdfHeight = doc.internal.pageSize.getHeight();
-
-            // 取得要截圖的頁面元素
+            
             let pages = [];
             if (mode === 'merge' || mode === 'proposal') {
                 pages = Array.from(contentDiv.querySelectorAll('.pdf-page'));
@@ -2851,46 +2860,35 @@
                 if (i > 0) doc.addPage();
 
                 const canvas = await html2canvas(pages[i], {
-                    scale: renderScale, 
-                    useCORS: true,       // 允許跨域圖片
-                    allowTaint: true,    // 允許髒畫布 (重要)
+                    scale: 2, 
+                    useCORS: true,
+                    allowTaint: true,
                     logging: false,
-                    backgroundColor: "#ffffff", // 強制白底
-                    windowWidth: 1200,   // 模擬桌面寬度，防止 iPad 排版跑掉
+                    backgroundColor: "#ffffff",
+                    windowWidth: 1200,
                     onclone: (clonedDoc) => {
-                        // 確保截圖時，內容是展開的
                         const clonedElement = clonedDoc.getElementById('print-container');
                         if(clonedElement) clonedElement.style.display = 'block';
                     }
                 });
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.95); // 改用 JPEG 節省記憶體
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
                 const imgProps = doc.getImageProperties(imgData);
                 const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
                 doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
             }
 
-            // 下載檔案
             doc.save(`${filename}_保險報告.pdf`);
 
         } catch (error) {
             console.error("PDF 生成失敗:", error);
-            
-            // === 失敗時的備案：呼叫 iPad 原生列印 ===
-            alert("⚠️ 系統偵測到 PDF 生成受阻 (可能是 iPad 記憶體限制)。\n\n將為您開啟「列印視窗」，請執行以下兩步即可存為 PDF：\n1. 點擊「列印」\n2. 在預覽畫面「雙指放大」或選擇「儲存到檔案」");
-            
-            // 移除截圖專用 class，恢復成列印模式
-            printContainer.classList.remove('pdf-generating');
-            setTimeout(() => window.print(), 500);
-
+            alert("⚠️ 瀏覽器不支援繪圖下載，將為您開啟列印視窗，請改用「另存 PDF」功能。");
+            window.print();
         } finally {
-            // 恢復原狀
             printContainer.classList.remove('pdf-generating');
-            if(activeBtn) {
-                activeBtn.innerText = originalText;
-                activeBtn.disabled = false;
-            }
+            activeBtn.innerText = originalText;
+            activeBtn.disabled = false;
         }
     }
 
