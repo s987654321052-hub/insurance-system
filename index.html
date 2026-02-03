@@ -471,115 +471,122 @@
         .print-btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; padding-right: 20px; }
         .print-footer-real { display: none; }
 
-        @media print {
-            /* === 1. 基礎還原 (確保畫面不會空白) === */
-            @page { size: A4 portrait; margin: 5mm; }
-            
-            html, body {
-                width: 100% !important;
-                height: auto !important;
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: visible !important;
-                display: block !important;
-                zoom: 0.75 !important; /* 適度縮放 */
-            }
+@media print {
+    /* === 1. 最優先：確保畫面一定顯示 (救援空白) === */
+    html, body {
+        height: auto !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+        color: black !important;
+        zoom: 1 !important; /* 先不縮放，確保內容出現 */
+    }
 
-            /* 隱藏系統介面 */
-            .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info { 
-                display: none !important; 
-            }
+    /* 顯示主內容容器 */
+    #print-container, #print-body-content {
+        display: block !important;
+        position: static !important; /* 解除絕對定位，避免消失 */
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        visibility: visible !important;
+    }
 
-            /* === 2. 【修正】移除業務員輸入框 (圖1) === */
-            /* 隱藏所有輸入框、下拉選單，但保留文字內容 */
-            input, select, textarea, .agent-input-group {
-                display: none !important;
-            }
-            /* 如果輸入框是在表格內，隱藏整個那一列 */
-            tr:has(input) {
-                display: none !important;
-            }
+    /* === 2. 隱藏系統介面 (只隱藏這些，其他不動) === */
+    .navbar, .page-container, .crm-action-bar, .print-btn-group, 
+    .btn, button, .tab-btn, .nav-info, .sidebar, header, footer { 
+        display: none !important; 
+    }
 
-            /* === 3. 【修正】表格重疊亂碼 (圖3) - 這是關鍵修正 === */
-            /* 強制解除表格的凍結視窗功能，讓它乖乖攤平 */
-            table, th, td, tr, thead, tbody, .table-responsive {
-                position: static !important; /* 解除 sticky */
-                overflow: visible !important; /* 解除捲動 */
-                height: auto !important;
-                width: 100% !important;
-                white-space: normal !important; /* 允許換行 */
-                display: table-cell; /* 確保單元格行為 */
-            }
-            
-            /* 針對表格容器 */
-            table { display: table !important; border-collapse: collapse !important; }
-            tr { display: table-row !important; break-inside: avoid !important; }
-            
-            /* 修正表頭樣式 */
-            th {
-                background-color: #f2f2f2 !important;
-                color: #000 !important;
-                border: 1px solid #999 !important;
-                font-size: 8pt !important;
-            }
-            td {
-                border: 1px solid #999 !important;
-                font-size: 8pt !important;
-                padding: 4px !important;
-            }
+    /* === 3. 【修正圖1】移除頁尾業務員輸入框 === */
+    /* 針對頁尾區域內的輸入框進行隱藏 */
+    .print-footer-real input,
+    .print-footer-real select,
+    .print-footer-real .agent-info,
+    /* 如果沒有特定 class，就隱藏頁面底部所有的 input */
+    input[type="text"], input[type="tel"] {
+        display: none !important;
+    }
+    /* 為了美觀，如果隱藏後留下空白框線，把框線也拿掉 */
+    .print-footer-real div {
+        border: none !important;
+    }
 
-            /* === 4. 【修正】房子與建議書並排 (圖2) === */
-            /* 我們嘗試抓取「保險規劃建議」下方的區塊，強制讓它們各佔一半 */
-            /* 假設這兩個區塊是用 Bootstrap 的 col-md-12 或類似結構 */
-            
-            /* 這裡使用通用選擇器，嘗試讓房子圖(圖形區)和文字區(清單區)並排 */
-            /* 注意：這裡假設房子圖是第一個大區塊，文字是第二個 */
-            
-            /* 強制將建議書區域內的區塊改為浮動並排 */
-            .advice-container > div, 
-            .concept-guide-section > div,
-            /* 如果是用 row 包 col 的結構 */
-            .row > div[class*="col-"] {
-                display: inline-block !important;
-                vertical-align: top !important;
-                float: none !important; /* 先重置 */
-            }
+    /* === 4. 【修正圖2】房子與建議書 (左右並排) === */
+    /* 針對「保險規劃建議」這個區塊 */
+    .advice-container, 
+    div[style*="border"] { /* 嘗試抓取有外框的那個區塊 */
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+        page-break-inside: avoid !important;
+    }
 
-            /* 針對建議書頁面，強制兩個主要區塊寬度各半 */
-            /* 您可能需要根據實際 HTML 結構微調這裡的選擇器 */
-            .advice-container > div:nth-child(1),
-            .advice-container > div:nth-child(2) {
-                width: 48% !important;
-                margin-right: 1% !important;
-            }
+    /* 假設結構是兩個子區塊 (左圖、右文) */
+    .advice-container > div,
+    .advice-container > section {
+        width: 48% !important;
+        margin: 0 1% !important;
+    }
 
-            /* === 5. 頁尾定位 (改回最穩定的 Fixed) === */
-            .print-footer-real {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                background: white;
-                border-top: 1px solid #ccc;
-                z-index: 9999;
-                display: flex !important;
-                justify-content: space-between;
-            }
-            
-            /* 確保內容不被頁尾遮住 */
-            #print-body-content {
-                padding-bottom: 50px !important;
-            }
+    /* 如果是用 Table 排版的舊系統，強制轉為區塊 */
+    .advice-container table, .advice-container tbody, .advice-container tr {
+        display: block !important;
+        width: 100% !important;
+    }
+    .advice-container td {
+        display: inline-block !important;
+        width: 48% !important;
+        vertical-align: top !important;
+    }
 
-            /* 顏色強制 */
-            .bg-med, .bg-acc, .bg-crit, .bg-can {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color: white !important;
-            }
-        }
+    /* === 5. 【修正圖3】表格重疊亂碼 (最重要修正) === */
+    /* 強制解除所有凍結視窗與捲動設定 */
+    table, .table, .indep-matrix-table {
+        width: 100% !important;
+        table-layout: auto !important;
+        border-collapse: collapse !important;
+        position: static !important; /* 關鍵 */
+    }
+
+    /* 修正表頭與內容 */
+    th, td {
+        position: static !important; /* 解除 sticky 導致的黑色重疊 */
+        overflow: visible !important;
+        white-space: normal !important; /* 允許換行 */
+        height: auto !important;
+        padding: 4px !important;
+        border: 1px solid #000 !important; /* 加上黑色邊框 */
+        font-size: 8pt !important; /* 字體縮小 */
+        color: #000 !important;
+        background-color: transparent !important;
+    }
+    
+    /* 特別針對表頭背景，避免透明造成重疊視覺 */
+    thead th {
+        background-color: #eee !important;
+        color: black !important;
+    }
+
+    /* === 6. 頁尾固定 (如果需要) === */
+    .print-footer-real {
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        z-index: 999;
+        border-top: 1px solid black;
+    }
+    
+    /* 避免內容被頁尾蓋住 */
+    body {
+        margin-bottom: 50px !important;
+    }
+}
 
       
         /* === 新增樣式：CRM 鎖定與家族成員 === */
