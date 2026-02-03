@@ -472,10 +472,10 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 頁面設定 === */
+            /* === 1. 頁面與紙張設定 === */
             @page {
                 size: A4 portrait;
-                margin: 5mm 8mm; /* 上下邊界縮小到 5mm，爭取高度 */
+                margin: 5mm; /* 極限邊界，爭取空間 */
             }
 
             html, body {
@@ -485,50 +485,51 @@
                 padding: 0 !important;
                 background: white !important;
                 font-family: "Microsoft JhengHei", sans-serif !important;
-                /* 整體稍微縮小 10%，這是讓房子塞進一頁的關鍵 */
-                zoom: 0.9 !important; 
+                /* 關鍵：縮小到 85%，確保所有房子都在第一頁 */
+                zoom: 0.85 !important; 
             }
 
-            /* === 2. 隱藏無關 UI === */
+            /* === 2. 隱藏不該出現的按鈕與選單 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
             .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
                 display: none !important; 
             }
 
-            /* === 3. 主容器 === */
+            /* === 3. 佈局容器 === */
             #print-container {
                 display: block !important;
                 width: 100% !important;
             }
 
-            /* === 4. 保險房子 (核心佈局) === */
+            /* === 4. 保險房子 (無外框模式) === */
             .house-grid {
                 display: flex !important;
                 flex-wrap: wrap !important;
                 justify-content: space-between !important;
                 width: 100% !important;
-                margin-top: 5px !important; /* 減少上方間距 */
+                margin-top: 5px !important;
             }
 
-            /* 房間設定 (緊湊模式) */
             .room {
-                flex: 0 0 49% !important; /* 左右各 49% */
+                flex: 0 0 49% !important;
                 width: 49% !important;
-                margin-bottom: 8px !important; /* 減少房間之間的距離 */
-                border: 1px solid #000 !important;
+                margin-bottom: 10px !important;
+                /* 關鍵修改：移除外框 */
+                border: none !important; 
+                box-shadow: none !important;
                 background: white !important;
-                box-sizing: border-box !important;
-                break-inside: avoid !important; /* 禁止內容被切斷 */
+                /* 防止內容被切斷 */
+                break-inside: avoid !important; 
                 page-break-inside: avoid !important;
             }
 
-            /* 讓癌症區塊橫跨 */
+            /* 癌症區塊跨欄 */
             .room[style*="span 2"] {
                 flex: 0 0 100% !important;
                 width: 100% !important;
             }
 
-            /* 屋頂 (Header Boxes) 緊湊化 */
+            /* 屋頂區塊 */
             .roof-container {
                 display: flex !important;
                 justify-content: space-between !important;
@@ -538,32 +539,33 @@
             .roof-box {
                 flex: 1 !important;
                 margin: 0 2px !important;
-                padding: 5px 0 !important; /* 減少屋頂內部留白 */
-                height: auto !important;
-                min-height: 60px !important; /* 限制屋頂高度 */
-            }
-            .roof-box h3, .roof-box .value {
-                margin: 2px 0 !important; /* 減少文字間距 */
-                font-size: 10pt !important;
+                border: none !important; /* 移除屋頂外框 */
             }
 
-            /* === 5. 表格與內容緊湊化 === */
+            /* === 5. 表格設定 (保留內部分隔線，否則看不清數據) === */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
                 table-layout: fixed !important;
-                margin-bottom: 0 !important; /* 移除表格下方間距 */
             }
 
+            /* 表格內部的線條 (保留，為了閱讀清晰) */
             th, td, .hc-cell {
-                border: 1px solid #666 !important;
-                padding: 3px 2px !important; /* 極限壓縮內距 */
-                font-size: 9pt !important; /* 字體改小 */
-                line-height: 1.2 !important; /* 行高改小 */
+                border: 1px solid #888 !important; /* 灰色細線 */
+                padding: 3px !important;
+                font-size: 9pt !important;
+                line-height: 1.2 !important;
                 word-wrap: break-word !important;
             }
 
-            /* 針對詳細列表頁面 (字再小一點以防爆版) */
+            /* 表頭背景色強制顯示 */
+            .hc-header-row, thead tr, .room-header {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color: white !important; /* 確保文字是白色 */
+            }
+
+            /* 針對詳細列表頁面 (字體縮小) */
             .hc-prod-row .hc-cell, .indep-matrix-table td {
                 font-size: 8pt !important;
                 padding: 2px !important;
@@ -576,21 +578,23 @@
                 align-items: flex-end;
                 border-bottom: 2px solid #c0392b;
                 padding-bottom: 5px;
-                margin-bottom: 5px; /* 減少頁首下方留白 */
+                margin-bottom: 10px;
             }
-            .ph-logo-img { height: 25px; width: auto; } /* Logo 縮小 */
+            .ph-logo-img { height: 25px; width: auto; }
             .ph-center { font-size: 14pt; font-weight: bold; color: #c0392b; }
 
-            /* 強制顏色 */
+            /* 強制顏色顯示 (紅、藍、橘、紫區塊) */
             .bg-med, .bg-acc, .bg-crit, .bg-can {
                 color: white !important;
                 -webkit-print-color-adjust: exact !important;
             }
-
-            /* 隱藏網址列印資訊 (如果瀏覽器支援) */
-            @page { margin-bottom: 0; }
+            
+            /* 移除建議區塊的外框 */
+            .advice-container {
+                border: none !important;
+                padding: 0 !important;
+            }
         }
-
 
       
         /* === 新增樣式：CRM 鎖定與家族成員 === */
