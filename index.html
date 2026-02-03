@@ -472,54 +472,131 @@
         .print-footer-real { display: none; }
 
         @media print {
-            @page { size: A4; margin: 5mm 10mm 10mm 10mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; padding: 0; margin: 0; zoom: 0.9; }
-            thead { display: table-header-group; } tfoot { display: table-footer-group; }
-            .navbar, .page-container { display: none !important; }
-            #print-container { display: block; width: 100%; margin: 0; } 
-            .print-header-content { width: 100%; height: 30mm; border-bottom: 2px solid #000; display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; margin-bottom: 15px; background: #fff; }
-            .ph-logo-img { max-height: 45px; width: auto; }
-            .ph-center { font-size: 24px; font-weight: bold; color: #c0392b; line-height: 1.2; padding-bottom: 5px; }
-            .ph-right { text-align: right; font-size: 10px; line-height: 1.2; }
-            .print-footer-real { display: flex !important; position: fixed; bottom: 0; left: 0; width: 100%; height: 30px; background: #fff; border-top: 2px solid #c0392b; justify-content: space-between; align-items: center; font-size: 10px; z-index: 9999; padding-top: 2px; }
-            .page-break { page-break-before: always; display: block; height: 1px; }
-            tr { break-inside: avoid; }
-            .hc-company-card, .hc-product-item { break-inside: avoid; margin-bottom: 10px; }
-            .indep-matrix-table { width: 100%; border-collapse: collapse !important; border: 2px solid #000 !important; margin-bottom: 10px; }
-            .indep-matrix-table th, .indep-matrix-table td { border: 1px solid #000 !important; color: #000 !important; font-size: 8pt; padding: 2px; }
+            /* === 1. 全局重置 (最重要) === */
+            @page { 
+                size: A4 portrait; /* 強制直向 */
+                margin: 10mm; 
+            }
             
-            .summary-table { width: 100%; border-collapse: collapse; border: 2px solid #000; font-family: "Microsoft JhengHei"; margin-bottom: 20px; }
-            .summary-table td { border: 1px solid #000; padding: 8px; vertical-align: top; width: 50%; }
-            .st-header { text-align: center; background: #fff; border-bottom: 2px solid #000; padding: 15px; }
-            .st-title { font-size: 18px; font-weight: bold; color: #000; margin-bottom: 5px; }
-            .st-val-main { font-size: 24px; font-weight: bold; color: #c0392b; }
-            .st-section-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #000; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-            .st-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; align-items: flex-end; }
-            .st-label { color: #333; font-weight: bold; }
-            .st-value { font-weight: bold; font-size: 14px; }
-            
-            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; }
-            .roof-container, .house-grid { zoom: 0.9; width: 95%; margin: 0 auto 10px auto; }
-            .advice-container { border: 2px solid #2c3e50 !important; }
-            .advice-title { background: #2c3e50 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
-            .ag-header { color: #c0392b !important; }
-            .ag-highlight { color: #e67e22 !important; }
+            html, body {
+                height: auto !important;
+                width: 100% !important;
+                overflow: visible !important; /* 解除捲動限制，讓內容能流到下一頁 */
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                font-size: 10pt !important; /* 縮小字體以免被切到 */
+                -webkit-print-color-adjust: exact !important; /* 強制列印背景色 */
+                print-color-adjust: exact !important;
+            }
 
-            /* Independent Claims Highlight Print Fix */
-            th.indep-header-comp.is-new {
-                background-color: #fff7ed !important;
-                border: 2px solid #f97316 !important;
-                color: #c2410c !important;
+            /* === 2. 隱藏不該出現的 UI === */
+            .navbar, .page-container, .crm-action-bar, .print-btn-group, 
+            .btn, button, .tab-btn, .nav-info, #login-overlay { 
+                display: none !important; 
+            }
+
+            /* === 3. 顯示列印容器 === */
+            #print-container { 
+                display: block !important; 
+                width: 100% !important;
+                position: static !important;
+                overflow: visible !important;
+            }
+
+            /* === 4. 頁首與頁尾修正 === */
+            .print-header-content {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: flex-end;
+                border-bottom: 2px solid #c0392b;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
+                width: 100%;
+            }
+            .ph-logo-img { max-height: 40px; width: auto; }
+            .ph-center { font-size: 20px; font-weight: bold; color: #c0392b; }
+            .ph-right { font-size: 9pt; text-align: right; line-height: 1.2; }
+
+            .print-footer-real {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 30px;
+                background: #fff;
+                border-top: 2px solid #c0392b;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 9pt;
+                z-index: 9999;
+            }
+
+            /* === 5. 內容排版修正 (防止跑版) === */
+            
+            /* 強制分頁設定 */
+            .page-break { page-break-before: always; display: block; height: 1px; }
+            tr, .hc-company-card, .transaction-block, .advice-container { 
+                break-inside: avoid; /* 防止內容被切成兩半 */
+                page-break-inside: avoid;
+            }
+
+            /* 修正保單健診表格 (解決 "病房費限..." 被切掉的問題) */
+            .hc-header-row, .hc-prod-row {
+                display: flex !important;
+                width: 100% !important;
+            }
+            .hc-cell {
+                font-size: 9pt !important;
+                padding: 2px 4px !important;
+                white-space: normal !important; /* 允許換行 */
+                overflow: visible !important;   /* 允許溢出顯示 */
+                text-overflow: clip !important; /* 移除 ... 省略號 */
+            }
+            /* 針對比較窄的欄位微調 */
+            .hc-cell:nth-child(1) { width: 40px !important; } /* 類型 */
+            .hc-cell:nth-child(2) { width: 90px !important; } /* 類別 */
+            
+            /* 修正保險房子 (House) */
+            .house-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important; /* 強制兩欄 */
+                gap: 10px !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+            }
+            .room-header { font-size: 10pt !important; padding: 5px !important; }
+            .item-row { font-size: 9pt !important; }
+            
+            /* 修正十字總表 */
+            .summary-table { width: 100% !important; border: 2px solid #000; }
+            .summary-table td { width: 50% !important; padding: 5px !important; }
+            
+            /* 修正獨立理賠表格 */
+            .indep-matrix-table {
+                width: 100% !important;
+                font-size: 8pt !important;
+                table-layout: fixed !important; /* 強制固定寬度 */
+            }
+            .indep-matrix-table th, .indep-matrix-table td {
+                padding: 2px !important;
+                word-wrap: break-word !important; /* 強制換行 */
+            }
+
+            /* 修正建議書比較 */
+            .cmp-val-box { flex-wrap: wrap !important; }
+            
+            /* 修正顏色顯示 (針對 iPad) */
+            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can {
+                color: white !important;
                 -webkit-print-color-adjust: exact;
             }
-            td.indep-val-cell.is-new {
-                background-color: #fffaf0 !important;
-                border-left: 2px solid #f97316 !important;
-                border-right: 2px solid #f97316 !important;
-                color: #c2410c !important;
-                -webkit-print-color-adjust: exact;
-            }
+            
+            /* 隱藏瀏覽器預設的頁首頁尾 (日期/網址) - 雖然 iPad 不一定理會，但盡量試試 */
+            @page { margin-top: 10mm; margin-bottom: 10mm; }
         }
+
       
         /* === 新增樣式：CRM 鎖定與家族成員 === */
         .input-lock-wrapper { position: relative; width: 100%; }
@@ -1301,10 +1378,10 @@
     }
       // === 系統設定變數 ===
     const DEFAULT_SETTINGS = {
-        agentName: "輸入姓名",
-        agentTitle: "輸入職位/職稱",
-        agentPhone: "輸入電話",
-        agentLine: "輸入個人LINE帳號",
+        agentName: "輸入名字",
+        agentTitle: "職位/稱呼",
+        agentPhone: "輸入電話號碼",
+        agentLine: "輸入LINE帳號",
         // 建議書額度
         advLifeTitle: "500~2000萬",
         advLifeSingle: "500萬",
@@ -3094,4 +3171,3 @@
 </script>
 </body>
 </html>
-
