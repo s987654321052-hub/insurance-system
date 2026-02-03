@@ -777,8 +777,10 @@
 </head>
 <body>
 
-    <input type="file" id="importAllFile" style="display:none" onchange="importAllClients(this)">
-    <input type="file" id="importSingleFile" style="display:none" onchange="importSingleClient(this)">
+		<!-- 關鍵修正：加入 accept 屬性，讓 iPad 知道可以選 JSON 檔 -->
+		<input type="file" id="importAllFile" style="display:none" accept=".json,application/json" onchange="importAllClients(this)">
+		<input type="file" id="importSingleFile" style="display:none" accept=".json,application/json" onchange="importSingleClient(this)">
+
 
         <div class="navbar">
         <div class="nav-title">🛡️ 客戶保險整合系統 (V30 加密版)</div>
@@ -2001,95 +2003,67 @@
     }
     function syncAddress() { if(document.getElementById('sameAddr').checked) document.getElementById('insuredMailAddress').value = document.getElementById('insuredAddress').value; }
     function deleteClient() { const id = document.getElementById('clientId').value; if(!id) return; if(confirm('確定刪除?')) { clients = clients.filter(c => c.id != id); localStorage.setItem('insuranceClients_v10', JSON.stringify(clients)); createNewClient(); renderClientList(); } }
-    function exportSingleClient() {
-        const id = document.getElementById('clientId').value;
-        if (!id) { alert('請先選擇客戶'); return; }
-        
-        const client = clients.find(c => c.id == id);
-        let content = JSON.stringify(client);
-        let fileName = `客戶_${client.insuredName}.json`;
-
-        // 詢問加密
-        if(confirm("🔒 是否要加密此檔案？\n(若檔案流出，沒有密碼將無法開啟)")) {
-            const pwd = prompt("請設定這份檔案的密碼：");
-            if(!pwd) { alert("已取消匯出"); return; }
-            
-            const encrypted = CryptoJS.AES.encrypt(content, pwd).toString();
-            content = JSON.stringify({ isEncrypted: true, data: encrypted });
-            fileName = `客戶_${client.insuredName}_加密版.json`;
-        }
-
-        // === 👇 關鍵修改開始：改用 Blob 優化 iPad 下載 👇 ===
-        const blob = new Blob([content], { type: "application/json;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a); // Firefox/iPad 有時需要將元素加入 DOM 才能點擊
-        a.click();
-        
-        // 清除暫存，釋放記憶體
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 100);
-        // === 👆 關鍵修改結束 👆 ===
-    }
     function importSingleClient(input) {
         const file = input.files[0];
         if (!file) return;
         
         const reader = new FileReader();
+        
+        // === 關鍵修正：加入 setTimeout 延遲 ===
         reader.onload = function(e) {
-            try {
-                let rawData = JSON.parse(e.target.result);
-                let finalData = rawData;
+            // 延遲 200 毫秒，等待 iPad 檔案視窗完全關閉，避免畫面卡死
+            setTimeout(() => {
+                try {
+                    let rawData = JSON.parse(e.target.result);
+                    let finalData = rawData;
 
-                // 偵測是否加密
-                if (rawData.isEncrypted) {
-                    const pwd = prompt("🔒 此檔案已加密，請輸入密碼解鎖：");
-                    if (!pwd) return;
+                    // 偵測是否加密
+                    if (rawData.isEncrypted) {
+                        const pwd = prompt("🔒 此檔案已加密，請輸入密碼解鎖：");
+                        if (!pwd) return;
 
-                    try {
-                        const bytes = CryptoJS.AES.decrypt(rawData.data, pwd);
-                        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-                        if (!decryptedStr) throw new Error("密碼錯誤");
-                        finalData = JSON.parse(decryptedStr);
-                    } catch (err) {
-                        alert("❌ 密碼錯誤或檔案損毀，無法匯入！");
-                        input.value = '';
-                        return;
+                        try {
+                            const bytes = CryptoJS.AES.decrypt(rawData.data, pwd);
+                            const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+                            if (!decryptedStr) throw new Error("密碼錯誤");
+                            finalData = JSON.parse(decryptedStr);
+                        } catch (err) {
+                            alert("❌ 密碼錯誤或檔案損毀，無法匯入！");
+                            input.value = '';
+                            return;
+                        }
                     }
-                }
 
-                // 正常的匯入流程
-                if (!finalData.insuredName) throw new Error();
-                const existingIdx = clients.findIndex(c => c.id == finalData.id);
-                
-                if (existingIdx >= 0) {
-                    if (confirm(`客戶「${finalData.insuredName}」已存在，是否覆蓋資料？`)) {
-                        clients[existingIdx] = finalData;
+                    if (!finalData.insuredName) throw new Error();
+                    const existingIdx = clients.findIndex(c => c.id == finalData.id);
+                    
+                    if (existingIdx >= 0) {
+                        if (confirm(`客戶「${finalData.insuredName}」已存在，是否覆蓋資料？`)) {
+                            clients[existingIdx] = finalData;
+                        } else {
+                            finalData.id = Date.now().toString(); 
+                            clients.push(finalData);
+                        }
                     } else {
-                        finalData.id = Date.now().toString(); // 產生新ID
                         clients.push(finalData);
                     }
-                } else {
-                    clients.push(finalData);
+                    
+                    localStorage.setItem('insuranceClients_v10', JSON.stringify(clients));
+                    renderClientList();
+                    loadClient(finalData.id);
+                    alert('✅ 匯入成功');
+                    
+                } catch (err) {
+                    alert('❌ 檔案格式錯誤或內容損毀');
+                } finally {
+                    // 確保最後清空 input，這樣下次選同一個檔案才會觸發 onchange
+                    input.value = '';
                 }
-                
-                localStorage.setItem('insuranceClients_v10', JSON.stringify(clients));
-                renderClientList();
-                loadClient(finalData.id);
-                alert('✅ 匯入成功');
-                
-            } catch (err) {
-                alert('❌ 檔案格式錯誤');
-            }
+            }, 200); // 這裡設定 200ms 延遲
         };
         reader.readAsText(file);
-        input.value = '';
     }
+
     function exportAllClients() {
         let content = JSON.stringify(clients);
         let fileName = `保戶備份_${new Date().toISOString().slice(0,10)}.json`;
@@ -2123,50 +2097,61 @@
     function importAllClients(input) {
         const file = input.files[0];
         if (!file) return;
-        if (!confirm('⚠️ 確定要匯入備份？(這將合併現有資料)')) { input.value = ''; return; }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                let rawData = JSON.parse(e.target.result);
-                let finalData = rawData;
-
-                // 偵測是否加密
-                if (rawData.isEncrypted) {
-                    const pwd = prompt("🔒 此備份檔已加密，請輸入密碼解鎖：");
-                    if (!pwd) return;
-
-                    try {
-                        const bytes = CryptoJS.AES.decrypt(rawData.data, pwd);
-                        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-                        if (!decryptedStr) throw new Error("密碼錯誤");
-                        finalData = JSON.parse(decryptedStr);
-                    } catch (err) {
-                        alert("❌ 密碼錯誤或檔案損毀，無法匯入！");
-                        input.value = '';
-                        return;
-                    }
-                }
-
-                if (!Array.isArray(finalData)) throw new Error();
-                
-                finalData.forEach(newClient => {
-                    const idx = clients.findIndex(c => c.id == newClient.id);
-                    if (idx >= 0) clients[idx] = newClient;
-                    else clients.push(newClient);
-                });
-                
-                localStorage.setItem('insuranceClients_v10', JSON.stringify(clients));
-                renderClientList();
-                alert(`✅ 成功匯入 ${finalData.length} 筆資料`);
-                
-            } catch (err) {
-                alert('❌ 檔案格式錯誤');
+        
+        // 這裡也要延遲 confirm，不然也會卡住
+        setTimeout(() => {
+            if (!confirm('⚠️ 確定要匯入備份？(這將合併現有資料)')) { 
+                input.value = ''; 
+                return; 
             }
-        };
-        reader.readAsText(file);
-        input.value = '';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // 再次延遲處理讀取後的邏輯
+                setTimeout(() => {
+                    try {
+                        let rawData = JSON.parse(e.target.result);
+                        let finalData = rawData;
+
+                        if (rawData.isEncrypted) {
+                            const pwd = prompt("🔒 此備份檔已加密，請輸入密碼解鎖：");
+                            if (!pwd) return;
+
+                            try {
+                                const bytes = CryptoJS.AES.decrypt(rawData.data, pwd);
+                                const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+                                if (!decryptedStr) throw new Error("密碼錯誤");
+                                finalData = JSON.parse(decryptedStr);
+                            } catch (err) {
+                                alert("❌ 密碼錯誤或檔案損毀，無法匯入！");
+                                input.value = '';
+                                return;
+                            }
+                        }
+
+                        if (!Array.isArray(finalData)) throw new Error();
+                        
+                        finalData.forEach(newClient => {
+                            const idx = clients.findIndex(c => c.id == newClient.id);
+                            if (idx >= 0) clients[idx] = newClient;
+                            else clients.push(newClient);
+                        });
+                        
+                        localStorage.setItem('insuranceClients_v10', JSON.stringify(clients));
+                        renderClientList();
+                        alert(`✅ 成功匯入 ${finalData.length} 筆資料`);
+                        
+                    } catch (err) {
+                        alert('❌ 檔案格式錯誤');
+                    } finally {
+                        input.value = '';
+                    }
+                }, 200);
+            };
+            reader.readAsText(file);
+        }, 100);
     }
+
     function updateApplicantDropdown() { const select = document.getElementById('importApplicant'); select.length = 1; let sorted = [...clients].sort((a, b) => (a.insuredName || '').localeCompare(b.insuredName || '', 'zh-TW')); sorted.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.text = c.insuredName; select.add(opt); }); }
     function getDobFromCrm() { 
         let y = document.getElementById('insuredRocY').value; 
@@ -3052,45 +3037,6 @@
             // 4. ✅ 強制重新整理頁面 (這行最重要！請取消註解)
             // 這會讓 EXE 重新載入整個網頁，解決所有卡死問題
             location.reload(); 
-        }
-    }
-
-
-    // === 修正後的登入邏輯 (不使用 alert) ===
-    function doLogin() {
-        const userField = document.getElementById('login-user');
-        const passField = document.getElementById('login-pass');
-        const msgField = document.getElementById('login-msg'); // 取得錯誤訊息區
-        
-        const user = userField.value;
-        const pass = passField.value;
-        
-        // 重置訊息
-        msgField.innerText = "";
-
-        const savedAuth = JSON.parse(localStorage.getItem('sys_auth_v1')) || DEFAULT_AUTH;
-        const inputUserHash = CryptoJS.SHA256(user).toString();
-        const inputPassHash = CryptoJS.SHA256(pass).toString();
-
-        if(inputUserHash === savedAuth.userHash && inputPassHash === savedAuth.passHash) {
-            sessionStorage.setItem('isLoggedIn', 'true');
-            document.getElementById('login-overlay').style.display = 'none';
-            userField.value = '';
-            passField.value = '';
-            msgField.innerText = ""; // 清空訊息
-        } else {
-            // ❌ 不使用 alert()，改用文字顯示錯誤
-            // 這樣不會搶走視窗焦點，EXE 就不會卡住
-            msgField.innerText = "❌ 帳號或密碼錯誤！";
-            
-            passField.value = ''; // 清空密碼
-            passField.focus();    // 游標直接放回密碼框
-            
-            // 加入震動效果提示 (選用)
-            const card = document.querySelector('.login-card');
-            card.style.transform = "translateX(5px)";
-            setTimeout(() => card.style.transform = "translateX(-5px)", 50);
-            setTimeout(() => card.style.transform = "translateX(0)", 100);
         }
     }
 
