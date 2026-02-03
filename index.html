@@ -472,34 +472,25 @@
         .print-footer-real { display: none; }
 
 		@media print {
+		  @page { size: A4; margin: 5mm 10mm 10mm 10mm; }
 
-		  /* 1) 基本：避免 iOS 100vh/overflow/position 影響列印 */
 		  html, body {
 			height: auto !important;
-			min-height: 0 !important;
 			overflow: visible !important;
-			background: #fff !important;
 			margin: 0 !important;
 			padding: 0 !important;
+			background: #fff !important;
 			-webkit-print-color-adjust: exact !important;
 			print-color-adjust: exact !important;
 		  }
 
-		  /* 2) iOS 對 @page 支援不穩，但保留桌機用 */
-		  @page { size: A4; margin: 5mm 10mm 10mm 10mm; }
-
-		  /* 3) 只顯示列印容器 */
+		  /* 只印 print-container */
 		  .navbar, .page-container, .crm-action-bar, .print-btn-group,
 		  .btn, button, .tab-btn, .nav-info, .sidebar, header, footer {
 			display: none !important;
 		  }
 
-		  #print-container {
-			display: block !important;
-			width: 100% !important;
-			margin: 0 !important;
-		  }
-		  #print-body-content {
+		  #print-container, #print-body-content {
 			display: block !important;
 			position: static !important;
 			width: 100% !important;
@@ -507,11 +498,13 @@
 			overflow: visible !important;
 		  }
 
-		  /* 4) 表頭/表尾：用 table-header-group / table-footer-group（比 fixed 更穩）*/
+		  /* iPad：用 thead/tfoot 取代 fixed header/footer */
 		  thead { display: table-header-group; }
 		  tfoot { display: table-footer-group; }
 
-		  /* 5) 頁首 */
+		  /* 關掉舊 fixed footer，避免覆蓋內容 */
+		  .print-footer-real { display: none !important; }
+
 		  .print-header-content {
 			width: 100%;
 			height: 30mm;
@@ -527,75 +520,41 @@
 		  .ph-center { font-size: 24px; font-weight: bold; color: #c0392b; line-height: 1.2; padding-bottom: 5px; }
 		  .ph-right { text-align: right; font-size: 10px; line-height: 1.2; }
 
-		  /* 6) 頁尾：iOS 對 fixed 容易覆蓋內容。兩種擇一： */
-		  /* A. 仍用 fixed（風險較高） */
-		  .print-footer-real {
-			display: flex !important;
-			position: fixed;
-			bottom: 0; left: 0;
-			width: 100%;
-			height: 30px;
-			background: #fff;
+		  .print-footer {
 			border-top: 2px solid #c0392b;
-			justify-content: space-between;
-			align-items: center;
 			font-size: 10px;
-			z-index: 9999;
-			padding-top: 2px;
+			padding-top: 4px;
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
 		  }
-		  /* 搭配預留空間避免被蓋 */
-		  body { padding-bottom: 40px !important; }
+		  .print-footer .pf-name { font-weight: 700; }
+		  .print-footer .pf-right { text-align: right; }
 
-		  /* 7) 分頁控制 */
 		  .page-break { break-before: page; page-break-before: always; display: block; height: 1px; }
 		  tr, .hc-company-card, .hc-product-item { break-inside: avoid; page-break-inside: avoid; }
 
-		  /* 8) 表格：不要全域清空背景，避免高亮失效 */
+		  /* 表格穩定度：iPad 對 auto layout 容易跳 */
 		  .indep-matrix-table {
 			width: 100%;
 			border-collapse: collapse !important;
 			border: 2px solid #000 !important;
-			margin-bottom: 10px;
-			table-layout: fixed; /* iPad 比較不會亂跳 */
+			table-layout: fixed;
 		  }
 		  .indep-matrix-table th, .indep-matrix-table td {
 			border: 1px solid #000 !important;
 			color: #000 !important;
 			font-size: 8pt;
 			padding: 2px;
-			vertical-align: top;
 			word-break: break-word;
+			vertical-align: top;
 		  }
 
-		  /* 9) Summary */
-		  .summary-table { width: 100%; border-collapse: collapse; border: 2px solid #000; font-family: "Microsoft JhengHei"; margin-bottom: 20px; }
-		  .summary-table td { border: 1px solid #000; padding: 8px; vertical-align: top; width: 50%; }
-		  .st-header { text-align: center; background: #fff; border-bottom: 2px solid #000; padding: 15px; }
-		  .st-title { font-size: 18px; font-weight: bold; color: #000; margin-bottom: 5px; }
-		  .st-val-main { font-size: 24px; font-weight: bold; color: #c0392b; }
-		  .st-section-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #000; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-		  .st-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; align-items: flex-end; }
-		  .st-label { color: #333; font-weight: bold; }
-		  .st-value { font-weight: bold; font-size: 14px; }
-
-		  /* 10) 色塊：保留顏色（iOS 需要明講） */
+		  /* 色塊保留 */
 		  .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can,
 		  th.indep-header-comp.is-new, td.indep-val-cell.is-new {
 			-webkit-print-color-adjust: exact !important;
 			print-color-adjust: exact !important;
-		  }
-
-		  /* Independent Claims highlight */
-		  th.indep-header-comp.is-new {
-			background-color: #fff7ed !important;
-			border: 2px solid #f97316 !important;
-			color: #c2410c !important;
-		  }
-		  td.indep-val-cell.is-new {
-			background-color: #fffaf0 !important;
-			border-left: 2px solid #f97316 !important;
-			border-right: 2px solid #f97316 !important;
-			color: #c2410c !important;
 		  }
 		}
 
@@ -2818,7 +2777,27 @@
         let printDiv = document.getElementById('print-body-content'); printDiv.innerHTML = '';
         const getHeader = (title) => `<div class="print-header-content"><div class="ph-left"><img src="./logo.png" alt="Logo" class="ph-logo-img"></div><div class="ph-center">${title}</div><div class="ph-right">被保險人：${insured}<br>${gender} / ${age} 歲<br>製表日：${new Date().toLocaleDateString()}</div></div>`;
 
-        const wrapInTable = (headerHtml, contentHtml) => { return `<table style="width:100%; border:none; border-collapse:collapse;"><thead><tr><td style="border:none; padding:0;">${headerHtml}</td></tr></thead><tbody><tr><td style="border:none; padding:0;">${contentHtml}</td></tr></tbody></table>`; };
+        const getPrintFooterHtml = () => `
+		  <div class="print-footer">
+			<div class="pf-left">
+			  <div class="pf-name">${(sysSettings?.agentName || "").trim()}</div>
+			  <div class="pf-title">${(sysSettings?.agentTitle || "").trim()}</div>
+			</div>
+			<div class="pf-right">
+			  <div>📞 ${(sysSettings?.agentPhone || "").trim()}</div>
+			  <div>LINE ${(sysSettings?.agentLine || "").trim()}</div>
+			</div>
+		  </div>
+		`;
+
+		const wrapInTable = (headerHtml, contentHtml) => `
+		  <table class="print-doc" style="width:100%; border:none; border-collapse:collapse;">
+			<thead><tr><td style="border:none; padding:0;">${headerHtml}</td></tr></thead>
+			<tbody><tr><td style="border:none; padding:0;">${contentHtml}</td></tr></tbody>
+			<tfoot><tr><td style="border:none; padding:0;">${getPrintFooterHtml()}</td></tr></tfoot>
+		  </table>
+		`;
+
 
         if (mode === 'single') {
             if(document.getElementById('page-health').classList.contains('active')) { renderHealthCheck(); let header = getHeader("保單詳細內容檢視"); let content = document.getElementById('health-check-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); } 
