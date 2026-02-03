@@ -472,8 +472,9 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 全局設定 (A4 尺寸與縮放) === */
-            @page { size: A4 portrait; margin: 0; }
+            /* === 1. 基礎還原 (確保畫面不會空白) === */
+            @page { size: A4 portrait; margin: 5mm; }
+            
             html, body {
                 width: 100% !important;
                 height: auto !important;
@@ -482,148 +483,101 @@
                 padding: 0 !important;
                 overflow: visible !important;
                 display: block !important;
-                zoom: 0.70 !important; /* 稍微縮小以容納複雜表格 */
+                zoom: 0.75 !important; /* 適度縮放 */
             }
 
-            /* === 2. 隱藏不必要的介面與【業務員資料】 === */
+            /* 隱藏系統介面 */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay,
-            /* 隱藏輸入框區域 (名字、職位、電話、LINE) */
-            input[placeholder*="輸入"], input[placeholder*="職位"], 
-            .agent-input-group, .footer-contact-row { 
+            .btn, button, .tab-btn, .nav-info { 
                 display: none !important; 
             }
 
-            /* === 3. 分頁區塊控制 (強制 A4 高度) === */
-            #print-container {
-                position: absolute; top: 0; left: 0; width: 100%;
+            /* === 2. 【修正】移除業務員輸入框 (圖1) === */
+            /* 隱藏所有輸入框、下拉選單，但保留文字內容 */
+            input, select, textarea, .agent-input-group {
+                display: none !important;
             }
-            #print-body-content > div {
-                display: flex !important;
-                flex-direction: column !important;
-                min-height: 280mm !important; /* 強制拉長每一頁 */
-                height: auto !important;
-                padding: 20px 30px 40px 30px !important; /* 底部留白給頁尾 */
-                box-sizing: border-box !important;
-                page-break-after: always !important;
-                break-after: page !important;
-                position: relative !important;
-            }
-            #print-body-content > div:last-child {
-                page-break-after: auto !important;
-                break-after: auto !important;
+            /* 如果輸入框是在表格內，隱藏整個那一列 */
+            tr:has(input) {
+                display: none !important;
             }
 
-            /* === 4. 頁首與頁尾 === */
-            .print-header-content {
-                width: 100%;
-                border-bottom: 3px solid #c0392b;
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-                margin-bottom: 15px;
+            /* === 3. 【修正】表格重疊亂碼 (圖3) - 這是關鍵修正 === */
+            /* 強制解除表格的凍結視窗功能，讓它乖乖攤平 */
+            table, th, td, tr, thead, tbody, .table-responsive {
+                position: static !important; /* 解除 sticky */
+                overflow: visible !important; /* 解除捲動 */
+                height: auto !important;
+                width: 100% !important;
+                white-space: normal !important; /* 允許換行 */
+                display: table-cell; /* 確保單元格行為 */
             }
-            .ph-center { font-size: 24px; font-weight: 900; color: #c0392b; }
             
-            /* 頁尾固定在底部 */
+            /* 針對表格容器 */
+            table { display: table !important; border-collapse: collapse !important; }
+            tr { display: table-row !important; break-inside: avoid !important; }
+            
+            /* 修正表頭樣式 */
+            th {
+                background-color: #f2f2f2 !important;
+                color: #000 !important;
+                border: 1px solid #999 !important;
+                font-size: 8pt !important;
+            }
+            td {
+                border: 1px solid #999 !important;
+                font-size: 8pt !important;
+                padding: 4px !important;
+            }
+
+            /* === 4. 【修正】房子與建議書並排 (圖2) === */
+            /* 我們嘗試抓取「保險規劃建議」下方的區塊，強制讓它們各佔一半 */
+            /* 假設這兩個區塊是用 Bootstrap 的 col-md-12 或類似結構 */
+            
+            /* 這裡使用通用選擇器，嘗試讓房子圖(圖形區)和文字區(清單區)並排 */
+            /* 注意：這裡假設房子圖是第一個大區塊，文字是第二個 */
+            
+            /* 強制將建議書區域內的區塊改為浮動並排 */
+            .advice-container > div, 
+            .concept-guide-section > div,
+            /* 如果是用 row 包 col 的結構 */
+            .row > div[class*="col-"] {
+                display: inline-block !important;
+                vertical-align: top !important;
+                float: none !important; /* 先重置 */
+            }
+
+            /* 針對建議書頁面，強制兩個主要區塊寬度各半 */
+            /* 您可能需要根據實際 HTML 結構微調這裡的選擇器 */
+            .advice-container > div:nth-child(1),
+            .advice-container > div:nth-child(2) {
+                width: 48% !important;
+                margin-right: 1% !important;
+            }
+
+            /* === 5. 頁尾定位 (改回最穩定的 Fixed) === */
             .print-footer-real {
-                display: flex !important;
                 position: fixed !important;
                 bottom: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                height: 30px;
                 background: white;
                 border-top: 1px solid #ccc;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 9px;
-                padding: 0 30px;
                 z-index: 9999;
-            }
-
-            /* === 5. 【修正重點】保險房子建議書 (左右排版) === */
-            /* 這是針對「保險規劃建議與觀念導引」那個區塊 */
-            .advice-container, .concept-guide-section {
                 display: flex !important;
-                flex-direction: row !important; /* 強制左右並排 */
-                justify-content: space-between !important;
-                align-items: flex-start !important;
-                border: 1px solid #888 !important;
-                border-radius: 8px;
-                padding: 10px !important;
-                margin-top: 15px !important;
-                break-inside: avoid !important;
+                justify-content: space-between;
             }
-
-            /* 左邊：房子圖 */
-            .advice-left, .house-img-wrapper {
-                width: 40% !important;
-                padding-right: 10px !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
-            }
-            /* 確保房子圖內的文字正常顯示 */
-            .advice-left .house-box {
-                border: 1px solid #000 !important;
-                margin: 2px 0 !important;
-                text-align: center !important;
-                padding: 5px !important;
-            }
-
-            /* 右邊：文字建議 */
-            .advice-right, .advice-text-list {
-                width: 60% !important;
-                padding-left: 10px !important;
-                border-left: 1px dotted #ccc !important;
-            }
-            .advice-item { margin-bottom: 8px !important; font-size: 9pt !important; }
-            .advice-title { font-weight: bold; color: #c0392b; }
-
-            /* === 6. 【修正重點】各家理賠彙整表 (解決重疊亂碼) === */
-            /* 強制解除所有捲動與定位鎖定 */
-            .indep-matrix-table, .summary-table-container, .table-responsive {
-                display: table !important;
-                width: 100% !important;
-                overflow: visible !important;
-                position: static !important;
-                height: auto !important;
-            }
-
-            /* 表格內容修正 */
-            .indep-matrix-table th, .indep-matrix-table td {
-                position: static !important; /* 解除 sticky 導致的重疊 */
-                overflow: visible !important;
-                white-space: normal !important; /* 允許文字換行 */
-                height: auto !important;
-                width: auto !important;
-                font-size: 7pt !important; /* 縮小字體 */
-                line-height: 1.2 !important;
-                padding: 2px !important;
-                border: 1px solid #666 !important;
-                background: white !important; /* 避免透明背景造成重疊 */
-                color: black !important;
-            }
-
-            /* 隱藏不重要的欄位以節省空間 (如果有的話) */
-            /* .col-hide-print { display: none; } */
-
-            /* 修正表頭顏色 */
-            .indep-matrix-table th {
-                background-color: #f0f0f0 !important;
-                font-weight: bold !important;
-                text-align: center !important;
-            }
-
-            /* 確保表格列不會被切斷 */
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
             
-            /* === 7. 顏色強制輸出 === */
+            /* 確保內容不被頁尾遮住 */
+            #print-body-content {
+                padding-bottom: 50px !important;
+            }
+
+            /* 顏色強制 */
             .bg-med, .bg-acc, .bg-crit, .bg-can {
-                color: white !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color: white !important;
             }
         }
 
