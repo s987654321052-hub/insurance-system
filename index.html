@@ -472,149 +472,159 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 基礎設定 (模擬 A4 紙張環境) === */
-            @page {
-                size: A4 portrait; /* 直式 A4 */
-                margin: 0;         /* 邊界歸零，由 CSS 控制內距 */
-            }
-
+            /* === 1. 全局設定 (A4 尺寸與縮放) === */
+            @page { size: A4 portrait; margin: 0; }
             html, body {
-                height: auto !important;
                 width: 100% !important;
+                height: auto !important;
                 background: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: visible !important;
                 display: block !important;
-                /* 【關鍵】縮放比例設定 0.72，這是 iPad 轉 PDF 最完美的比例 */
-                zoom: 0.72 !important; 
+                zoom: 0.70 !important; /* 稍微縮小以容納複雜表格 */
             }
 
-            /* === 2. 隱藏 App 介面 === */
+            /* === 2. 隱藏不必要的介面與【業務員資料】 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
+            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay,
+            /* 隱藏輸入框區域 (名字、職位、電話、LINE) */
+            input[placeholder*="輸入"], input[placeholder*="職位"], 
+            .agent-input-group, .footer-contact-row { 
                 display: none !important; 
             }
 
-            /* === 3. 列印容器 === */
+            /* === 3. 分頁區塊控制 (強制 A4 高度) === */
             #print-container {
-                display: block !important;
-                position: absolute !important;
-                top: 0;
-                left: 0;
-                width: 100% !important;
-                z-index: 1;
+                position: absolute; top: 0; left: 0; width: 100%;
             }
-
-            /* === 4. 【核心修正】強制每一頁都是 A4 高度 === */
-            /* 針對 JS 產生的每一個分頁區塊 (p1, p2, p3...) */
             #print-body-content > div {
                 display: flex !important;
                 flex-direction: column !important;
-                
-                /* 【關鍵】強制高度為 275mm (A4約297mm，預留頁首尾空間) */
-                min-height: 275mm !important; 
-                height: 275mm !important;
-                
-                width: 100% !important;
+                min-height: 280mm !important; /* 強制拉長每一頁 */
+                height: auto !important;
+                padding: 20px 30px 40px 30px !important; /* 底部留白給頁尾 */
                 box-sizing: border-box !important;
-                padding: 20px 30px !important; /* 頁面內距 */
-                position: relative !important;
-                
-                /* 強制分頁 */
                 page-break-after: always !important;
                 break-after: page !important;
+                position: relative !important;
             }
-
-            /* 最後一頁不要多印空白頁 */
             #print-body-content > div:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
             }
 
-            /* === 5. 頁首設定 === */
+            /* === 4. 頁首與頁尾 === */
             .print-header-content {
                 width: 100%;
-                border-bottom: 3px solid #c0392b; /* 加粗紅線 */
+                border-bottom: 3px solid #c0392b;
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
-                padding-bottom: 8px;
-                margin-bottom: 20px;
-                flex-shrink: 0; /* 禁止頁首被壓縮 */
+                margin-bottom: 15px;
             }
-            .ph-logo-img { height: 45px; width: auto; }
-            .ph-center { font-size: 24px; font-weight: 900; color: #c0392b; letter-spacing: 2px; }
-            .ph-right { font-size: 11px; text-align: right; line-height: 1.4; color: #333; font-weight: bold; }
-
-            /* === 6. 頁尾設定 (強制沉底) === */
-            /* 這次我們不依賴 fixed，而是把 footer 放在每個 div 的最後面(如果 JS 結構允許)，
-               或者我們用 fixed 配合 min-height 撐開 */
+            .ph-center { font-size: 24px; font-weight: 900; color: #c0392b; }
+            
+            /* 頁尾固定在底部 */
             .print-footer-real {
                 display: flex !important;
                 position: fixed !important;
                 bottom: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                height: 40px !important; /* 固定高度 */
-                border-top: 1px solid #999;
-                background: white !important;
-                z-index: 9999;
-                
+                height: 30px;
+                background: white;
+                border-top: 1px solid #ccc;
                 justify-content: space-between;
                 align-items: center;
-                font-size: 10px;
-                padding: 0 30px; /* 配合頁面內距 */
-                color: #555;
+                font-size: 9px;
+                padding: 0 30px;
+                z-index: 9999;
             }
 
-            /* === 7. 內容區塊自動擴展 === */
-            /* 讓房子圖或表格區域佔據剩餘空間，把頁尾推到底部 (備用方案) */
-            .house-grid, .summary-table, .hc-container, .indep-container {
-                flex-grow: 1; 
-            }
-
-            /* === 8. 房子圖排版優化 (仿 PDF) === */
-            .house-grid {
+            /* === 5. 【修正重點】保險房子建議書 (左右排版) === */
+            /* 這是針對「保險規劃建議與觀念導引」那個區塊 */
+            .advice-container, .concept-guide-section {
                 display: flex !important;
-                flex-wrap: wrap !important;
+                flex-direction: row !important; /* 強制左右並排 */
                 justify-content: space-between !important;
-                gap: 15px;
+                align-items: flex-start !important;
+                border: 1px solid #888 !important;
+                border-radius: 8px;
+                padding: 10px !important;
+                margin-top: 15px !important;
+                break-inside: avoid !important;
             }
-            .room {
-                flex: 0 0 48% !important;
-                width: 48% !important;
-                border: none !important;
-                margin-bottom: 15px !important;
-            }
-            .room[style*="span 2"] { flex: 0 0 100% !important; }
 
-            /* === 9. 表格樣式優化 === */
-            table { width: 100% !important; border-collapse: collapse !important; }
-            th, td {
+            /* 左邊：房子圖 */
+            .advice-left, .house-img-wrapper {
+                width: 40% !important;
+                padding-right: 10px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+            /* 確保房子圖內的文字正常顯示 */
+            .advice-left .house-box {
+                border: 1px solid #000 !important;
+                margin: 2px 0 !important;
+                text-align: center !important;
+                padding: 5px !important;
+            }
+
+            /* 右邊：文字建議 */
+            .advice-right, .advice-text-list {
+                width: 60% !important;
+                padding-left: 10px !important;
+                border-left: 1px dotted #ccc !important;
+            }
+            .advice-item { margin-bottom: 8px !important; font-size: 9pt !important; }
+            .advice-title { font-weight: bold; color: #c0392b; }
+
+            /* === 6. 【修正重點】各家理賠彙整表 (解決重疊亂碼) === */
+            /* 強制解除所有捲動與定位鎖定 */
+            .indep-matrix-table, .summary-table-container, .table-responsive {
+                display: table !important;
+                width: 100% !important;
+                overflow: visible !important;
+                position: static !important;
+                height: auto !important;
+            }
+
+            /* 表格內容修正 */
+            .indep-matrix-table th, .indep-matrix-table td {
+                position: static !important; /* 解除 sticky 導致的重疊 */
+                overflow: visible !important;
+                white-space: normal !important; /* 允許文字換行 */
+                height: auto !important;
+                width: auto !important;
+                font-size: 7pt !important; /* 縮小字體 */
+                line-height: 1.2 !important;
+                padding: 2px !important;
                 border: 1px solid #666 !important;
-                padding: 4px !important; /* 稍微增加內距讓它不那麼擠 */
-                font-size: 9pt !important;
+                background: white !important; /* 避免透明背景造成重疊 */
+                color: black !important;
+            }
+
+            /* 隱藏不重要的欄位以節省空間 (如果有的話) */
+            /* .col-hide-print { display: none; } */
+
+            /* 修正表頭顏色 */
+            .indep-matrix-table th {
+                background-color: #f0f0f0 !important;
+                font-weight: bold !important;
                 text-align: center !important;
             }
-            
-            /* 彙整表與建議書特別設定 */
-            .summary-table td { padding: 6px !important; font-size: 10pt !important; }
-            .advice-container { margin-top: 20px !important; border: 2px solid #333 !important; }
 
-            /* === 10. 顏色強制輸出 === */
-            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can,
-            .hc-company-card.is-new .hc-header-row,
-            th.indep-header-comp.is-new,
-            td.indep-val-cell.is-new {
+            /* 確保表格列不會被切斷 */
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            
+            /* === 7. 顏色強制輸出 === */
+            .bg-med, .bg-acc, .bg-crit, .bg-can {
+                color: white !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                color: white !important;
             }
-            th.indep-header-comp.is-new, td.indep-val-cell.is-new { color: #c2410c !important; }
-            
-            /* 避免被切斷 */
-            .hc-company-card, .advice-container, tr { break-inside: avoid !important; }
         }
 
       
