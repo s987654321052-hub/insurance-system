@@ -472,128 +472,131 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 全局強制設定 === */
+            /* === 1. 頁面基礎設定 (A4 標準) === */
             @page {
                 size: A4 portrait;
-                margin: 5mm;
+                margin: 10mm; /* 標準邊界 */
             }
 
-            * {
-                -webkit-print-color-adjust: exact !important; /* 強制列印背景色 */
-                print-color-adjust: exact !important;
-                box-sizing: border-box !important; /* 確保寬度包含邊框 */
+            /* 防止 iPad 自動放大文字 */
+            html {
+                -webkit-text-size-adjust: 100%; 
+                text-size-adjust: 100%;
             }
 
-            html, body {
+            body {
                 width: 100% !important;
-                height: auto !important;
-                overflow: visible !important;
-                background: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: white !important;
+                /* 設定基準字體大小，確保清晰 */
                 font-family: "Microsoft JhengHei", sans-serif !important;
+                font-size: 10pt !important; 
+                line-height: 1.3 !important;
+                color: #000 !important;
             }
 
-            /* === 2. 縮放整個頁面 (關鍵！解決跑版) === */
-            /* iPad 預設字體太大，導致擠壓，這裡直接縮小到 75% */
-            #print-container {
-                zoom: 0.75 !important; 
-                width: 100% !important;
-                display: block !important;
-            }
-
-            /* === 3. 隱藏不該出現的 UI === */
+            /* === 2. 隱藏 UI === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
             .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
                 display: none !important; 
             }
 
-            /* === 4. 解決「保險房子」變成直向的問題 (改用 Flex) === */
+            /* === 3. 主容器設定 (關鍵) === */
+            #print-container {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+            }
+
+            /* === 4. 保險房子 (強制雙欄) === */
             .house-grid {
-                display: flex !important; /* 放棄 Grid，改用 Flex */
+                display: flex !important;
                 flex-wrap: wrap !important;
                 justify-content: space-between !important;
                 width: 100% !important;
-                margin: 0 !important;
-                gap: 0 !important; /* 清除 gap，改用 margin 控制 */
+                margin-top: 10px !important;
             }
 
             .room {
-                /* 強制設定寬度為 48%，確保兩兩並排 */
-                width: 49% !important; 
-                margin-bottom: 10px !important;
-                border: 2px solid #333 !important; /* 強制顯示邊框 */
+                /* 強制 48% 寬度，確保兩兩並排 */
+                flex: 0 0 48% !important;
+                width: 48% !important;
+                margin-bottom: 15px !important;
+                border: 1px solid #000 !important; /* 細線邊框 */
+                box-sizing: border-box !important;
                 background: white !important;
-                break-inside: avoid !important;
-                display: block !important;
+                break-inside: avoid !important; /* 防止被切斷 */
             }
 
-            /* 讓癌症區塊橫跨整行 */
+            /* 癌症區塊跨欄 */
             .room[style*="span 2"] {
+                flex: 0 0 100% !important;
                 width: 100% !important;
             }
-
+            
             /* 屋頂修正 */
             .roof-container {
                 display: flex !important;
                 justify-content: space-between !important;
                 width: 100% !important;
-                margin-bottom: 5px !important;
             }
             .roof-box {
-                width: 32% !important; /* 三個屋頂平分 */
-                margin: 0 1px !important;
+                flex: 1 !important;
+                margin: 0 2px !important;
+                border-radius: 4px !important;
             }
 
-            /* === 5. 解決「線條不見」的問題 (暴力加框) === */
-            /* 針對所有表格、儲存格強制加黑框 */
-            table, th, td, .hc-cell, .indep-matrix-table th, .indep-matrix-table td {
-                border: 1px solid #000 !important;
-                border-collapse: collapse !important;
+            /* === 5. 表格全域修正 (解決線條亂跑) === */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important; /* 讓線條合併，不會有雙重線 */
+                table-layout: fixed !important; /* 固定表格寬度，防止被文字撐爆 */
+                margin-bottom: 10px !important;
             }
-            
-            /* 特別針對保單詳細內容的表格 */
-            .hc-company-card {
-                border: 2px solid #000 !important;
-                margin-bottom: 15px !important;
+
+            th, td, .hc-cell {
+                border: 1px solid #444 !important; /* 統一深灰色細邊框 */
+                padding: 4px !important;
+                font-size: 9pt !important; /* 表格內字體縮小一點 */
+                word-wrap: break-word !important; /* 強制長字換行 */
+                overflow-wrap: break-word !important;
+                white-space: normal !important; /* 允許換行 */
             }
-            
-            /* 確保表頭背景色印得出來 */
-            .hc-header-row {
+
+            /* 針對詳細內容表格 (欄位較多，字再縮小) */
+            .hc-prod-row .hc-cell, .indep-matrix-table td {
+                font-size: 8pt !important;
+                padding: 2px !important;
+            }
+
+            /* 修正表頭背景 */
+            .hc-header-row, thead tr {
                 background-color: #f0f0f0 !important;
-                border-bottom: 2px solid #000 !important;
+                -webkit-print-color-adjust: exact !important;
             }
 
-            /* === 6. 內容排版微調 === */
-            .advice-container {
-                border: 2px solid #000 !important;
-                margin-top: 15px !important;
-                padding: 10px !important;
-                break-inside: avoid !important;
-            }
-
-            /* 頁首頁尾 */
+            /* === 6. 頁首頁尾 === */
             .print-header-content {
                 display: flex !important;
                 justify-content: space-between;
                 align-items: flex-end;
-                border-bottom: 3px solid #c0392b !important; /* 加粗線條 */
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-                width: 100%;
+                border-bottom: 2px solid #c0392b !important;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
             }
-            
+            .ph-logo-img { height: 30px; width: auto; } /* 限制 Logo 大小 */
+            .ph-center { font-size: 16pt; font-weight: bold; color: #c0392b; }
+
             /* 強制顏色顯示 */
             .bg-med, .bg-acc, .bg-crit, .bg-can {
                 color: white !important;
                 -webkit-print-color-adjust: exact !important;
             }
             
-            /* 修正文字大小，避免換行 */
-            .hc-cell {
-                font-size: 11pt !important; 
-                padding: 4px !important;
-            }
+            /* 強制分頁 */
+            .page-break { page-break-before: always !important; }
         }
 
       
