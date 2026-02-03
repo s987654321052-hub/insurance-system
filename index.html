@@ -2809,68 +2809,88 @@
         }
     }
 
-    // 核心 PDF 下載函式
+        // === 改良版：iPad 專用 PDF 下載函式 ===
     async function downloadPDF(filename, mode) {
         const { jsPDF } = window.jspdf;
         const printContainer = document.getElementById('print-container');
         const contentDiv = document.getElementById('print-body-content');
         
-        // 1. 暫時顯示列印區塊以進行截圖
+        // 1. 準備截圖環境
         printContainer.classList.add('pdf-generating');
         
-        // 顯示載入中提示 (可選)
-        const originalBtnText = document.activeElement.innerText;
-        document.activeElement.innerText = "⏳ 生成中...";
-        document.activeElement.disabled = true;
+        // 鎖定按鈕防止重複點擊
+        const activeBtn = document.activeElement;
+        const originalText = activeBtn.innerText;
+        activeBtn.innerText = "⏳ 處理中...";
+        activeBtn.disabled = true;
+
+        // 偵測是否為行動裝置 (iPad/iPhone/Android)
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // iPad 關鍵設定：降低解析度以防記憶體崩潰
+        // 電腦用 2 (高畫質)，平板手機用 1 (標準)
+        const renderScale = isMobile ? 1 : 2; 
 
         try {
-            const doc = new jsPDF('p', 'mm', 'a4'); // A4 直式
-            const pdfWidth = doc.internal.pageSize.getWidth(); // A4 寬度 (約 210mm)
-            const pageHeight = doc.internal.pageSize.getHeight();
+            // 等待一下，讓 DOM 完全渲染
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-            // 判斷是否為多頁模式 (Merge 或 Proposal)
+            const doc = new jsPDF('p', 'mm', 'a4'); 
+            const pdfWidth = doc.internal.pageSize.getWidth(); 
+            const pdfHeight = doc.internal.pageSize.getHeight();
+
+            // 取得要截圖的頁面元素
             let pages = [];
             if (mode === 'merge' || mode === 'proposal') {
                 pages = Array.from(contentDiv.querySelectorAll('.pdf-page'));
             } else {
-                pages = [contentDiv]; // 單頁模式直接抓整個容器
+                pages = [contentDiv];
             }
 
             for (let i = 0; i < pages.length; i++) {
-                if (i > 0) doc.addPage(); // 第二頁開始要新增頁面
+                if (i > 0) doc.addPage();
 
-                // 使用 html2canvas 截圖
                 const canvas = await html2canvas(pages[i], {
-                    scale: 2, // 提高解析度 (2倍)
-                    useCORS: true, // 允許跨域圖片
+                    scale: renderScale, 
+                    useCORS: true,       // 允許跨域圖片
+                    allowTaint: true,    // 允許髒畫布 (重要)
                     logging: false,
-                    windowWidth: 1200 // 模擬寬螢幕寬度以防跑版
+                    backgroundColor: "#ffffff", // 強制白底
+                    windowWidth: 1200,   // 模擬桌面寬度，防止 iPad 排版跑掉
+                    onclone: (clonedDoc) => {
+                        // 確保截圖時，內容是展開的
+                        const clonedElement = clonedDoc.getElementById('print-container');
+                        if(clonedElement) clonedElement.style.display = 'block';
+                    }
                 });
 
-                const imgData = canvas.toDataURL('image/png');
+                const imgData = canvas.toDataURL('image/jpeg', 0.95); // 改用 JPEG 節省記憶體
                 const imgProps = doc.getImageProperties(imgData);
                 const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+                doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
             }
 
             // 下載檔案
-            doc.save(`${filename}_保險整合報告_${mode}.pdf`);
+            doc.save(`${filename}_保險報告.pdf`);
 
         } catch (error) {
-            console.error("PDF 生成失敗", error);
-            alert("PDF 生成失敗，請檢查瀏覽器相容性。");
+            console.error("PDF 生成失敗:", error);
+            
+            // === 失敗時的備案：呼叫 iPad 原生列印 ===
+            alert("⚠️ 系統偵測到 PDF 生成受阻 (可能是 iPad 記憶體限制)。\n\n將為您開啟「列印視窗」，請執行以下兩步即可存為 PDF：\n1. 點擊「列印」\n2. 在預覽畫面「雙指放大」或選擇「儲存到檔案」");
+            
+            // 移除截圖專用 class，恢復成列印模式
+            printContainer.classList.remove('pdf-generating');
+            setTimeout(() => window.print(), 500);
+
         } finally {
             // 恢復原狀
             printContainer.classList.remove('pdf-generating');
-            // 恢復按鈕
-            const btns = document.querySelectorAll('.print-btn-group button');
-            btns.forEach(b => {
-                if(b.innerText === "⏳ 生成中...") {
-                    b.innerText = originalBtnText;
-                    b.disabled = false;
-                }
-            });
+            if(activeBtn) {
+                activeBtn.innerText = originalText;
+                activeBtn.disabled = false;
+            }
         }
     }
 
