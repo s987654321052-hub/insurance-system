@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>全方位保險整合系統 (V30 加密版Final)</title>
     <style>
         :root { 
@@ -15,7 +15,18 @@
             --crm-pay: #059669; --crm-pay-bg: #ecfdf5;
             --crm-border: #cbd5e1;
         }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { 
+			font-family: "Microsoft JhengHei", sans-serif; 
+			background: var(--bg); 
+			margin: 0; 
+			padding: 0; 
+			color: #333; 
+			/* 改用 dvh (Dynamic Viewport Height) 解決手機/平板網址列遮擋問題 */
+			height: 100dvh; 
+			overflow: hidden; 
+			display: flex; 
+			flex-direction: column; 
+		}
         
         /* --- 頂部導航 --- */
         .navbar { background: #fff; padding: 10px 20px; border-bottom: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 100; height: 50px; flex-shrink: 0; }
@@ -36,7 +47,14 @@
         /* --- 通用元件 --- */
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 20px; border: 1px solid #ddd; margin-bottom: 20px; }
         .card-header { font-size: 16px; font-weight: bold; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; justify-content: center; }
+        .btn { 
+			padding: 8px 16px; /* 加大內距 */
+			font-size: 14px; 
+		}
+		input, select, .crm-input, .crm-select {
+			height: 34px; /* 加高輸入框 */
+			font-size: 14px; /* 加大字體防止 iOS 自動縮放 */
+		}
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -280,7 +298,18 @@
 
         /* --- CRM Styles --- */
         .crm-layout { display: flex; height: 100%; width: 100%; overflow: hidden; background-color: #f1f5f9; }
-        .crm-sidebar { width: 300px; background: white; border-right: 1px solid var(--crm-border); display: flex; flex-direction: column; height: 100%; flex-shrink: 0; z-index: 10; }
+        .crm-sidebar { 
+			width: 300px; 
+			background: white; 
+			border-right: 1px solid var(--crm-border); 
+			display: flex; 
+			flex-direction: column; 
+			height: 100%; 
+			flex-shrink: 0; 
+			z-index: 10; 
+			/* 增加底部內距，避開 Home Bar */
+			padding-bottom: env(safe-area-inset-bottom, 20px); 
+		}
         .crm-sidebar-header { padding: 10px; background: #0f172a; color: white; }
         .crm-search-box { padding: 8px; background: #f8fafc; border-bottom: 1px solid var(--crm-border); display: flex; flex-direction: column; gap: 5px; }
         .crm-search-input, .crm-filter-select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; }
@@ -297,10 +326,32 @@
         .badge-pay { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
         .badge-renew { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
         .badge-bday { background: #fce7f3; color: #db2777; border: 1px solid #fbcfe8; }
-        .db-actions { padding: 8px; border-top: 1px solid var(--crm-border); background: #f1f5f9; display: flex; gap: 5px; }
-        .btn-db { flex: 1; padding: 4px; font-size: 0.75rem; border: 1px solid #cbd5e1; background: white; cursor: pointer; border-radius: 3px; }
+        .db-actions { 
+			padding: 15px 10px; /* 加大點擊範圍 */
+			border-top: 1px solid var(--crm-border); 
+			background: #f1f5f9; 
+			display: flex; 
+			gap: 10px; 
+			/* 這裡強制往上推，避免被平板底部橫條遮住 */
+			margin-bottom: 20px; 
+		}
+        .btn-db { 
+			flex: 1; 
+			padding: 10px; /* 加大按鈕高度，方便手指點擊 */
+			font-size: 0.9rem; 
+			border: 1px solid #cbd5e1; 
+			background: white; 
+			cursor: pointer; 
+			border-radius: 6px; 
+			font-weight: bold;
+			color: #475569;
+		}
         .crm-main-content { flex: 1; padding: 10px 15px; overflow-y: auto; }
-        .crm-form-container { max-width: 1200px; margin: 0 auto; padding-bottom: 50px; }
+        .crm-form-container { 
+			max-width: 1200px; 
+			margin: 0 auto; 
+			padding-bottom: 150px; /* 大幅增加底部留白 */
+		}
         .data-panel { background: white; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 15px; overflow: hidden; border: 1px solid var(--crm-border); }
         .panel-insured { border-top: 3px solid var(--crm-insured); }
         .panel-app { border-top: 3px solid var(--crm-app); }
@@ -325,7 +376,28 @@
         .dynamic-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; margin-bottom: 8px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
         .btn-remove-card { position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; border: none; border-radius: 3px; padding: 1px 5px; font-size: 0.7rem; cursor: pointer; z-index: 2; }
         .btn-add { background: #3b82f6; color: white; border: none; padding: 3px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; }
-        .crm-action-bar { margin-top: 15px; padding: 10px 15px; background: white; border-top: 1px solid var(--crm-border); display: flex; justify-content: space-between; align-items: center; position: sticky; bottom: 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 20; }
+        .crm-action-bar { 
+			margin-top: 15px; 
+			padding: 15px 20px; 
+			background: rgba(255, 255, 255, 0.95); /* 半透明背景 */
+			border-top: 1px solid var(--crm-border); 
+			display: flex; 
+			justify-content: space-between; 
+			align-items: center; 
+			
+			/* 關鍵修改：懸浮並往上移 */
+			position: sticky; 
+			bottom: 50px; /* 距離底部 50px，確保不被網址列遮住 */
+			
+			box-shadow: 0 -5px 15px rgba(0,0,0,0.1); /* 增加陰影讓它看起來浮起來 */
+			z-index: 20; 
+			border-radius: 10px; /* 圓角看起來更像 App */
+			margin-left: 10px;
+			margin-right: 10px;
+			
+			/* 適配 iPhone/iPad 底部安全區 */
+			margin-bottom: calc(20px + env(safe-area-inset-bottom));
+		}
         .btn-save { background: #10b981; color: white; }
         .btn-delete { background: #ef4444; color: white; }
         .btn-export { background: #f59e0b; color: white; }
