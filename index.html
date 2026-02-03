@@ -476,34 +476,40 @@
 
 		  html, body {
 			height: auto !important;
-			overflow: visible !important;
+			width: auto !important;          /* 不要用 vw */
 			margin: 0 !important;
 			padding: 0 !important;
+			overflow: visible !important;
 			background: #fff !important;
 			-webkit-print-color-adjust: exact !important;
 			print-color-adjust: exact !important;
+			zoom: 1 !important;              /* iPad 不要靠 zoom */
 		  }
 
-		  /* 只印 print-container */
+		  *, *::before, *::after { box-sizing: border-box !important; }
+
+		  /* 只印列印容器 */
 		  .navbar, .page-container, .crm-action-bar, .print-btn-group,
-		  .btn, button, .tab-btn, .nav-info, .sidebar, header, footer {
-			display: none !important;
-		  }
+		  .btn, button, .tab-btn, .nav-info, .sidebar, header, footer,
+		  .print-footer-real { display: none !important; } /* 關掉舊 fixed footer */
 
 		  #print-container, #print-body-content {
 			display: block !important;
 			position: static !important;
 			width: 100% !important;
-			height: auto !important;
+			max-width: 190mm !important;     /* 防止右側裁切 */
+			margin: 0 auto !important;
+			padding: 0 !important;
 			overflow: visible !important;
 		  }
 
-		  /* iPad：用 thead/tfoot 取代 fixed header/footer */
+		  .print-doc {
+			width: 100% !important;
+			border-collapse: collapse !important;
+		  }
+
 		  thead { display: table-header-group; }
 		  tfoot { display: table-footer-group; }
-
-		  /* 關掉舊 fixed footer，避免覆蓋內容 */
-		  .print-footer-real { display: none !important; }
 
 		  .print-header-content {
 			width: 100%;
@@ -513,12 +519,12 @@
 			justify-content: space-between;
 			align-items: flex-end;
 			padding-bottom: 5px;
-			margin-bottom: 15px;
+			margin-bottom: 10px;
 			background: #fff;
 		  }
 		  .ph-logo-img { max-height: 45px; width: auto; }
-		  .ph-center { font-size: 24px; font-weight: bold; color: #c0392b; line-height: 1.2; padding-bottom: 5px; }
-		  .ph-right { text-align: right; font-size: 10px; line-height: 1.2; }
+		  .ph-center { font-size: 22px; font-weight: 800; color: #c0392b; line-height: 1.2; }
+		  .ph-right  { text-align: right; font-size: 10px; line-height: 1.2; }
 
 		  .print-footer {
 			border-top: 2px solid #c0392b;
@@ -526,35 +532,30 @@
 			padding-top: 4px;
 			display: flex;
 			justify-content: space-between;
-			align-items: flex-start;
+			gap: 10px;
 		  }
-		  .print-footer .pf-name { font-weight: 700; }
 		  .print-footer .pf-right { text-align: right; }
 
-		  .page-break { break-before: page; page-break-before: always; display: block; height: 1px; }
+		  /* 防止 grid/flex 撐爆紙寬 */
+		  img { max-width: 100% !important; height: auto !important; }
+		  td, th, div, span { overflow-wrap: anywhere !important; word-break: break-word !important; }
+		  .roof-container, .house-grid, .room, .room-body, .item-row, .cmp-val-box { min-width: 0 !important; }
+
+		  .page-break { break-before: page; page-break-before: always; }
+
 		  tr, .hc-company-card, .hc-product-item { break-inside: avoid; page-break-inside: avoid; }
 
-		  /* 表格穩定度：iPad 對 auto layout 容易跳 */
 		  .indep-matrix-table {
-			width: 100%;
+			width: 100% !important;
 			border-collapse: collapse !important;
 			border: 2px solid #000 !important;
-			table-layout: fixed;
+			table-layout: fixed !important;
 		  }
 		  .indep-matrix-table th, .indep-matrix-table td {
 			border: 1px solid #000 !important;
-			color: #000 !important;
-			font-size: 8pt;
-			padding: 2px;
-			word-break: break-word;
-			vertical-align: top;
-		  }
-
-		  /* 色塊保留 */
-		  .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can,
-		  th.indep-header-comp.is-new, td.indep-val-cell.is-new {
-			-webkit-print-color-adjust: exact !important;
-			print-color-adjust: exact !important;
+			font-size: 8pt !important;
+			padding: 2px !important;
+			vertical-align: top !important;
 		  }
 		}
 
@@ -2791,13 +2792,12 @@
 		`;
 
 		const wrapInTable = (headerHtml, contentHtml) => `
-		  <table class="print-doc" style="width:100%; border:none; border-collapse:collapse;">
-			<thead><tr><td style="border:none; padding:0;">${headerHtml}</td></tr></thead>
-			<tbody><tr><td style="border:none; padding:0;">${contentHtml}</td></tr></tbody>
-			<tfoot><tr><td style="border:none; padding:0;">${getPrintFooterHtml()}</td></tr></tfoot>
+		  <table class="print-doc">
+			<thead><tr><td>${headerHtml}</td></tr></thead>
+			<tbody><tr><td>${contentHtml}</td></tr></tbody>
+			<tfoot><tr><td>${getPrintFooterHtml()}</td></tr></tfoot>
 		  </table>
 		`;
-
 
         if (mode === 'single') {
             if(document.getElementById('page-health').classList.contains('active')) { renderHealthCheck(); let header = getHeader("保單詳細內容檢視"); let content = document.getElementById('health-check-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); } 
