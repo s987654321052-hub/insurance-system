@@ -472,51 +472,114 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 全局重置 (最重要) === */
+            /* === 1. 頁面基礎設定 === */
             @page { 
-                size: A4 portrait; /* 強制直向 */
-                margin: 10mm; 
+                size: A4 portrait; 
+                margin: 5mm 10mm; /* 上下 5mm，左右 10mm */
             }
             
             html, body {
-                height: auto !important;
                 width: 100% !important;
-                overflow: visible !important; /* 解除捲動限制，讓內容能流到下一頁 */
+                height: auto !important;
+                overflow: visible !important;
                 background: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                font-size: 10pt !important; /* 縮小字體以免被切到 */
-                -webkit-print-color-adjust: exact !important; /* 強制列印背景色 */
+                font-size: 10pt !important;
+                font-family: "Microsoft JhengHei", sans-serif !important;
+                -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
 
-            /* === 2. 隱藏不該出現的 UI === */
+            /* === 2. 隱藏畫面上的按鈕與導航 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info, #login-overlay { 
+            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
                 display: none !important; 
             }
 
-            /* === 3. 顯示列印容器 === */
+            /* === 3. 顯示列印區塊 === */
             #print-container { 
                 display: block !important; 
                 width: 100% !important;
-                position: static !important;
-                overflow: visible !important;
             }
 
-            /* === 4. 頁首與頁尾修正 === */
+            /* === 4. 關鍵修正：保險房子強制雙欄 (解決跑版) === */
+            .house-grid {
+                display: grid !important;
+                /* 強制切成兩欄，每欄 48%，中間留 2% 間距 */
+                grid-template-columns: 48% 48% !important; 
+                gap: 15px !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+                break-inside: avoid !important; /* 盡量不要被切開 */
+            }
+
+            /* 修正屋頂排列 */
+            .roof-container {
+                display: flex !important;
+                justify-content: space-between !important;
+                width: 100% !important;
+                margin-bottom: 10px !important;
+                break-inside: avoid !important;
+            }
+            .roof-box {
+                flex: 1 !important;
+                margin: 0 5px !important;
+            }
+
+            /* 防止房間內容被切斷 */
+            .room {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                border: 1px solid #ccc !important;
+                background: white !important;
+                margin-bottom: 10px !important;
+            }
+            
+            /* 讓癌症區塊橫跨兩欄 */
+            .room[style*="span 2"] {
+                grid-column: span 2 !important;
+            }
+
+            /* === 5. 整體縮放 (塞進一頁) === */
+            /* 透過 zoom 縮小，讓房子能完整停留在第一頁 */
+            #house-visual, #house-visual-cmp {
+                zoom: 0.85 !important; 
+            }
+
+            /* === 6. 表格與其他元件修正 === */
+            .summary-table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 20px !important;
+                break-inside: avoid !important;
+            }
+            .summary-table td {
+                width: 50% !important;
+                padding: 8px !important;
+                font-size: 10pt !important;
+            }
+
+            .advice-container {
+                display: flex !important;
+                border: 2px solid #2c3e50 !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                margin-top: 20px !important;
+            }
+
+            /* 頁首頁尾美化 */
             .print-header-content {
                 display: flex !important;
                 justify-content: space-between;
                 align-items: flex-end;
                 border-bottom: 2px solid #c0392b;
                 padding-bottom: 5px;
-                margin-bottom: 10px;
-                width: 100%;
+                margin-bottom: 15px;
             }
-            .ph-logo-img { max-height: 40px; width: auto; }
-            .ph-center { font-size: 20px; font-weight: bold; color: #c0392b; }
-            .ph-right { font-size: 9pt; text-align: right; line-height: 1.2; }
+            .ph-logo-img { height: 35px; width: auto; }
+            .ph-center { font-size: 18pt; font-weight: bold; color: #c0392b; }
+            .ph-right { font-size: 9pt; text-align: right; }
 
             .print-footer-real {
                 display: flex !important;
@@ -524,78 +587,39 @@
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                height: 30px;
-                background: #fff;
-                border-top: 2px solid #c0392b;
+                height: 25px;
+                border-top: 1px solid #c0392b;
                 justify-content: space-between;
                 align-items: center;
-                font-size: 9pt;
-                z-index: 9999;
+                font-size: 8pt;
+                background: #fff;
             }
 
-            /* === 5. 內容排版修正 (防止跑版) === */
-            
-            /* 強制分頁設定 */
-            .page-break { page-break-before: always; display: block; height: 1px; }
-            tr, .hc-company-card, .transaction-block, .advice-container { 
-                break-inside: avoid; /* 防止內容被切成兩半 */
-                page-break-inside: avoid;
+            /* 強制分頁 */
+            .page-break { 
+                page-break-before: always !important; 
+                display: block; 
+                height: 1px; 
             }
-
-            /* 修正保單健診表格 (解決 "病房費限..." 被切掉的問題) */
-            .hc-header-row, .hc-prod-row {
-                display: flex !important;
-                width: 100% !important;
-            }
-            .hc-cell {
-                font-size: 9pt !important;
-                padding: 2px 4px !important;
-                white-space: normal !important; /* 允許換行 */
-                overflow: visible !important;   /* 允許溢出顯示 */
-                text-overflow: clip !important; /* 移除 ... 省略號 */
-            }
-            /* 針對比較窄的欄位微調 */
-            .hc-cell:nth-child(1) { width: 40px !important; } /* 類型 */
-            .hc-cell:nth-child(2) { width: 90px !important; } /* 類別 */
             
-            /* 修正保險房子 (House) */
-            .house-grid {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important; /* 強制兩欄 */
-                gap: 10px !important;
-                width: 100% !important;
-                margin: 0 auto !important;
-            }
-            .room-header { font-size: 10pt !important; padding: 5px !important; }
-            .item-row { font-size: 9pt !important; }
-            
-            /* 修正十字總表 */
-            .summary-table { width: 100% !important; border: 2px solid #000; }
-            .summary-table td { width: 50% !important; padding: 5px !important; }
-            
-            /* 修正獨立理賠表格 */
+            /* 修正獨立理賠表格寬度 */
             .indep-matrix-table {
                 width: 100% !important;
                 font-size: 8pt !important;
-                table-layout: fixed !important; /* 強制固定寬度 */
+                table-layout: fixed !important;
             }
             .indep-matrix-table th, .indep-matrix-table td {
-                padding: 2px !important;
-                word-wrap: break-word !important; /* 強制換行 */
+                padding: 3px !important;
+                word-wrap: break-word !important;
             }
-
-            /* 修正建議書比較 */
-            .cmp-val-box { flex-wrap: wrap !important; }
             
-            /* 修正顏色顯示 (針對 iPad) */
+            /* 顏色強制顯示 */
             .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can {
                 color: white !important;
-                -webkit-print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
             }
-            
-            /* 隱藏瀏覽器預設的頁首頁尾 (日期/網址) - 雖然 iPad 不一定理會，但盡量試試 */
-            @page { margin-top: 10mm; margin-bottom: 10mm; }
         }
+
 
       
         /* === 新增樣式：CRM 鎖定與家族成員 === */
