@@ -473,7 +473,9 @@
 		  justify-content:space-between;
 		  gap:10px;
 		}
-
+		
+		.summary-table { width: 100%; }
+		.advice-container { width: 100%; box-sizing: border-box; }
 		.ph-left{ flex:0 0 auto; }
 
 		.ph-logo-img{
@@ -2816,16 +2818,40 @@
 		  }
 
 		} else if (mode === 'cross') {
-		  printDiv.innerHTML = getHeader("保險房子理賠總表");
-		  const summaryHtml = generateSummaryTable();
-		  printDiv.innerHTML += summaryHtml;
-		  printDiv.innerHTML += getAdviceHtml();
-        } else if (mode === 'merge') {
-            let p1 = document.createElement('div'); p1.style.pageBreakAfter = "always"; p1.innerHTML = getHeader("保單理賠權益分析表"); p1.appendChild(document.getElementById('house-visual').cloneNode(true)); printDiv.appendChild(p1);
-            let p2 = document.createElement('div'); p2.style.pageBreakAfter = "always"; p2.innerHTML = getHeader("保險房子理賠總表") + generateSummaryTable() + getAdviceHtml(); printDiv.appendChild(p2);
-            let p3 = document.createElement('div'); p3.style.pageBreakAfter = "always"; renderHealthCheck(); let hcHeader = getHeader("保單詳細內容檢視"); let hcContent = document.getElementById('health-check-content').innerHTML; p3.innerHTML = wrapInTable(hcHeader, hcContent); printDiv.appendChild(p3);
-            let p4 = document.createElement('div'); renderIndepClaims(); let indepHeader = getHeader("各家保險理賠彙整表"); let indepContent = document.getElementById('indep-claims-content').innerHTML; p4.innerHTML = wrapInTable(indepHeader, indepContent); printDiv.appendChild(p4);
-        } else if (mode === 'proposal') {
+  const header = getHeader("保險房子理賠總表");
+  const content = generateSummaryTable() + getAdviceHtml();
+  printDiv.innerHTML = wrapInTable(header, content);
+
+			} else if (mode === 'merge') {
+			  // 1) 分析表
+			  const p1 = document.createElement('div');
+			  p1.className = 'pdf-page-break';
+			  const header1 = getHeader("保單理賠權益分析表");
+			  const content1 = document.getElementById('house-visual').outerHTML;
+			  p1.innerHTML = wrapInTable(header1, content1);
+			  printDiv.appendChild(p1);
+
+			  // 2) 總表 + 觀念導引
+			  const p2 = document.createElement('div');
+			  p2.className = 'pdf-page-break';
+			  const header2 = getHeader("保險房子理賠總表");
+			  const content2 = generateSummaryTable() + getAdviceHtml();
+			  p2.innerHTML = wrapInTable(header2, content2);
+			  printDiv.appendChild(p2);
+
+			  // 3) 健檢
+			  renderHealthCheck();
+			  const p3 = document.createElement('div');
+			  p3.className = 'pdf-page-break';
+			  p3.innerHTML = wrapInTable(getHeader("保單詳細內容檢視"), document.getElementById('health-check-content').innerHTML);
+			  printDiv.appendChild(p3);
+
+			  // 4) 獨立理賠
+			  renderIndepClaims();
+			  const p4 = document.createElement('div');
+			  p4.innerHTML = wrapInTable(getHeader("各家保險理賠彙整表"), document.getElementById('indep-claims-content').innerHTML);
+			  printDiv.appendChild(p4);
+			} else if (mode === 'proposal') {
             renderProposal();
             let header = getHeader("保險規劃建議書 (前後比較)");
             let houseContent = document.getElementById('proposal-house-container').innerHTML;
