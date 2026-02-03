@@ -472,139 +472,141 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 解除 App 鎖定 (解決空白的關鍵) === */
+            /* === 1. 基礎設定 (解除 App 鎖定) === */
             html, body {
-                height: auto !important;        /* 允許高度自動延伸 */
-                overflow: visible !important;   /* 允許內容溢出 (顯示出來) */
-                display: block !important;      /* 取消 Flex 佈局 */
+                height: auto !important;
+                overflow: visible !important;
+                display: block !important;
                 background: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
-                /* iPad 縮放比例，維持 0.8 效果最好 */
-                zoom: 0.8 !important; 
+                zoom: 0.8 !important; /* 維持 iPad 最佳縮放比 */
             }
 
-            /* === 2. 隱藏原本的 App 介面 === */
+            /* === 2. 隱藏 App 介面 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay,
-            .print-footer-real { /* 暫時隱藏原本的 footer，避免位置跑掉，下面重新定義 */
+            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
                 display: none !important; 
             }
 
-            /* === 3. 顯示列印容器 (絕對定位確保在最上方) === */
+            /* === 3. 列印容器設定 === */
             #print-container {
                 display: block !important;
                 position: absolute !important;
                 top: 0;
                 left: 0;
                 width: 100% !important;
-                margin: 0 !important;
-                padding: 10px !important; /* 稍微留白 */
-                z-index: 9999;
+                z-index: 1;
             }
 
-            /* === 4. 頁首設定 === */
+            /* === 4. 【關鍵修改】強制分頁與拉長高度 === */
+            /* 針對 JS 產生的每一個分頁區塊 (p1, p2, p3...) */
+            #print-body-content > div {
+                display: block !important;
+                
+                /* 讓每個區塊至少佔滿一張 A4 紙的高度 (扣除邊界) */
+                min-height: 1050px !important; /* 約 A4 高度 */
+                height: auto !important;
+                
+                /* 強制換頁 */
+                page-break-after: always !important;
+                break-after: page !important;
+                
+                /* 內容佈局 */
+                position: relative !important;
+                padding-bottom: 60px !important; /* 預留空間給頁尾 */
+                box-sizing: border-box !important;
+            }
+
+            /* 最後一頁不要多印一張空白紙 */
+            #print-body-content > div:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+                min-height: auto !important; /* 最後一頁不需要強制拉長 */
+            }
+
+            /* === 5. 頁首設定 === */
             .print-header-content {
                 width: 100%;
                 border-bottom: 2px solid #c0392b;
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
-                padding-bottom: 2px;
-                margin-bottom: 10px;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
             }
-            .ph-logo-img { height: 30px; width: auto; }
-            .ph-center { font-size: 18px; font-weight: bold; color: #c0392b; }
-            .ph-right { font-size: 9px; text-align: right; }
+            .ph-logo-img { height: 35px; width: auto; }
+            .ph-center { font-size: 20px; font-weight: bold; color: #c0392b; }
+            .ph-right { font-size: 10px; text-align: right; }
 
-            /* === 5. 頁尾設定 (固定在每頁底部) === */
+            /* === 6. 頁尾設定 (固定於底部) === */
+            /* 這裡改用 fixed 配合 body padding 確保出現在每一頁 */
             .print-footer-real {
                 display: flex !important;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
+                position: fixed !important; /* 強制固定在視窗底部 */
+                bottom: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 30px !important;
                 border-top: 1px solid #ccc;
-                font-size: 9px;
+                background: white !important;
+                z-index: 9999; /* 確保在最上層 */
+                
+                /* 內容排版 */
                 justify-content: space-between;
-                padding-top: 2px;
-                background: white;
-                z-index: 9999;
+                align-items: center;
+                font-size: 9px;
+                padding: 0 10px;
             }
 
-            /* === 6. 保險房子 (左右排版修正) === */
+            /* === 7. 內容排版 (房子與表格) === */
             .house-grid {
                 display: flex !important;
                 flex-wrap: wrap !important;
                 justify-content: space-between !important;
                 width: 100% !important;
-                margin: 0 auto 5px auto;
             }
 
             .room {
-                flex: 0 0 48% !important; /* 強制左右各 48% */
+                flex: 0 0 48% !important;
                 width: 48% !important;
-                margin-bottom: 8px !important;
-                border: none !important;  /* 去除外框 */
-                box-shadow: none !important;
-                background: white !important;
+                margin-bottom: 10px !important;
+                border: none !important;
                 text-align: center !important;
                 break-inside: avoid !important;
             }
-
-            /* 癌症區塊跨欄 */
+            
             .room[style*="span 2"] {
                 flex: 0 0 100% !important;
                 width: 100% !important;
             }
 
-            /* === 7. 表格與文字優化 === */
-            table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                table-layout: fixed !important;
-            }
-
+            /* 表格設定 */
+            table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
             th, td {
                 border: 1px solid #888 !important;
-                padding: 1px 2px !important;
+                padding: 2px !important;
                 font-size: 8pt !important;
-                line-height: 1.1 !important;
+                text-align: center !important;
                 word-wrap: break-word !important;
-                text-align: center !important; /* 強制置中 */
             }
 
-            /* 針對詳細列表縮小字體 */
-            .indep-matrix-table th, .indep-matrix-table td, 
-            .hc-prod-row .hc-cell {
-                font-size: 7pt !important;
-            }
-
-            /* 針對彙整表 */
-            .summary-table td {
-                padding: 1px 3px !important;
-                font-size: 7.5pt !important;
-            }
-
-            /* === 8. 顏色強制輸出 === */
-            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can {
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            /* 建議加保的高亮顏色 */
+            /* === 8. 顏色強制顯示 === */
+            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can,
             .hc-company-card.is-new .hc-header-row,
             th.indep-header-comp.is-new,
             td.indep-val-cell.is-new {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color: white !important;
             }
-
-            /* 分頁控制 */
-            .page-break { page-break-before: always; }
-            tr, .hc-company-card, .advice-container { break-inside: avoid; }
+            
+            /* 修正文字顏色 (避免白底白字) */
+            th.indep-header-comp.is-new, td.indep-val-cell.is-new { color: #c2410c !important; }
+            
+            /* 避免元素內部被切斷 */
+            .hc-company-card, .advice-container, tr { break-inside: avoid !important; }
         }
 
       
