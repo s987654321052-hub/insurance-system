@@ -485,7 +485,26 @@
 		  object-fit:contain;
 		  display:block;
 		}
+		
+		/* 匯出 PDF 時，強制回到「從頁面頂端開始流式排版」 */
+		html.pdf-exporting, body.pdf-exporting {
+		  height: auto !important;
+		  overflow: visible !important;
+		}
 
+		body.pdf-exporting {
+		  display: block !important;           /* 🔥 砍掉 flex/置中影響 */
+		  margin: 0 !important;
+		}
+
+		/* 避免被 transform / fixed 造成 y 偏移或被置中 */
+		body.pdf-exporting #print-container {
+		  position: static !important;
+		  transform: none !important;
+		  margin: 0 !important;
+		  width: 100% !important;
+		}
+		
 		.ph-center{ flex:1 1 auto; text-align:center; }
 
 		.ph-right{
@@ -3195,37 +3214,42 @@
 	  const el = document.getElementById('print-container');
 	  if (!el) return alert('找不到 #print-container');
 
-	  // iOS 避免捲動偏移
 	  const prevScrollY = window.scrollY;
 	  window.scrollTo(0, 0);
 
-	  // 先確保列印容器是可見狀態（你平常是 display:none）
+	  // ✅ 開啟匯出模式：強制排版從頂端開始
+	  document.documentElement.classList.add('pdf-exporting');
+	  document.body.classList.add('pdf-exporting');
+
 	  const prevDisplay = el.style.display;
 	  el.style.display = 'block';
 
-		const opt = {
-		  margin: [8, 8, 10, 8],
-		  filename,
-		  image: { type: 'jpeg', quality: 0.72 },
-		  html2canvas: {
-			scale: 1.35,
-			useCORS: true,
-			backgroundColor: '#ffffff',
-			scrollX: 0,
-			scrollY: 0
-		  },
-		  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-		  pagebreak: { mode: ['css', 'legacy'] }
-		};
+	  const opt = {
+		margin: [8, 8, 10, 8],
+		filename,
+		image: { type: 'jpeg', quality: 0.72 },
+		html2canvas: {
+		  scale: 1.2,
+		  useCORS: true,
+		  backgroundColor: '#ffffff',
+		  scrollX: 0,
+		  scrollY: 0,
+		  windowWidth: el.scrollWidth,
+		  windowHeight: el.scrollHeight
+		},
+		jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+		pagebreak: { mode: ['css', 'legacy'] }
+	  };
 
 	  try {
 		await html2pdf().set(opt).from(el).save();
 	  } finally {
 		el.style.display = prevDisplay;
+		document.documentElement.classList.remove('pdf-exporting');
+		document.body.classList.remove('pdf-exporting');
 		window.scrollTo(0, prevScrollY);
 	  }
 	}
-
 
 </script>
 </body>
