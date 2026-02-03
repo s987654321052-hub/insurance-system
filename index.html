@@ -15,65 +15,13 @@
             --crm-pay: #059669; --crm-pay-bg: #ecfdf5;
             --crm-border: #cbd5e1;
         }
-        body { 
-			font-family: "Microsoft JhengHei", sans-serif; 
-			background: var(--bg); 
-			margin: 0; 
-			padding: 0; 
-			color: #333; 
-			
-			/* 關鍵修正：使用 dvh (Dynamic Viewport Height) */
-			height: 100vh; /* 舊瀏覽器備用 */
-			height: 100dvh; /* 針對 iOS/iPad 的動態高度修正 */
-			
-			overflow: hidden; 
-			display: flex; 
-			flex-direction: column; 
-			
-			/* 關鍵修正：避開 iPad 頂部狀態列與底部橫條 */
-			padding-top: env(safe-area-inset-top);
-			padding-bottom: env(safe-area-inset-bottom);
-			box-sizing: border-box; /* 確保 padding 不會撐大寬度 */
-		}
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         /* --- 頂部導航 --- */
-        .navbar { 
-			background: #fff; 
-			padding: 10px 20px; 
-			border-bottom: 2px solid #ddd; 
-			display: flex; 
-			justify-content: space-between; 
-			align-items: center; 
-			box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-			z-index: 100; 
-			height: 50px; 
-			flex-shrink: 0; 
-			
-			/* 關鍵修正：讓導航列內容太多時可以左右滑動，不要換行 */
-			overflow-x: auto; 
-			white-space: nowrap;
-			gap: 10px; /* 增加間距 */
-		}
-
-		/* 讓標題不要被壓縮 */
-		.nav-title { 
-			font-size: 20px; 
-			font-weight: bold; 
-			color: var(--primary); 
-			display: flex; 
-			align-items: center; 
-			gap: 10px; 
-			flex-shrink: 0; /* 禁止標題縮小 */
-		}
+        .navbar { background: #fff; padding: 10px 20px; border-bottom: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 100; height: 50px; flex-shrink: 0; }
+        .nav-title { font-size: 20px; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 10px; }
         .nav-info { font-size: 14px; color: #555; display: flex; gap: 15px; background: #eee; padding: 5px 15px; border-radius: 20px; }
-        .nav-tabs { 
-			display: flex; 
-			gap: 5px; 
-			background: #e0e0e0; 
-			padding: 5px; 
-			border-radius: 8px; 
-			flex-shrink: 0; /* 禁止按鈕區縮小 */
-		}
+        .nav-tabs { display: flex; gap: 5px; background: #e0e0e0; padding: 5px; border-radius: 8px; }
         .tab-btn { padding: 6px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; color: #666; background: transparent; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .tab-btn:hover { background: #bdc3c7; color: #333; }
@@ -377,24 +325,7 @@
         .dynamic-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; margin-bottom: 8px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
         .btn-remove-card { position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; border: none; border-radius: 3px; padding: 1px 5px; font-size: 0.7rem; cursor: pointer; z-index: 2; }
         .btn-add { background: #3b82f6; color: white; border: none; padding: 3px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; }
-        .crm-action-bar { 
-			margin-top: 15px; 
-			padding: 10px 15px; 
-			background: white; 
-			border-top: 1px solid var(--crm-border); 
-			display: flex; 
-			justify-content: space-between; 
-			align-items: center; 
-			
-			/* 確保黏在底部 */
-			position: sticky; 
-			bottom: 0; 
-			box-shadow: 0 -2px 10px rgba(0,0,0,0.05); 
-			z-index: 20; 
-			
-			/* 增加底部安全距離，避免被 iPad 橫條擋住 */
-			padding-bottom: calc(10px + env(safe-area-inset-bottom));
-		}
+        .crm-action-bar { margin-top: 15px; padding: 10px 15px; background: white; border-top: 1px solid var(--crm-border); display: flex; justify-content: space-between; align-items: center; position: sticky; bottom: 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 20; }
         .btn-save { background: #10b981; color: white; }
         .btn-delete { background: #ef4444; color: white; }
         .btn-export { background: #f59e0b; color: white; }
@@ -1340,10 +1271,11 @@
     let currentFamily = []; 
     let currentLocks = { insuredName: false, appName: false }; 
 
-        function init() {
-        // ★ 加入這行：網頁載入時立刻檢查登入
+    function init() {
+        // 1. 檢查登入狀態
         checkLoginStatus();
 
+        // 2. 載入資料庫與設定
         let savedLib = localStorage.getItem('ins_product_lib_v1');
         if(savedLib) { try { productLib = JSON.parse(savedLib); } catch(e) { productLib = {}; } }
         renderClientList();
@@ -1351,6 +1283,22 @@
         createNewClient(); 
         initDbPage();
         updateFooterDisplay();
+
+        // === 3. 關鍵修正：強制解鎖輸入框並給予焦點 ===
+        // 這段是用來解決 EXE 登出後無法輸入的問題
+        const userField = document.getElementById('login-user');
+        const passField = document.getElementById('login-pass');
+        if(userField && passField) {
+            userField.disabled = false;
+            passField.disabled = false;
+            userField.readOnly = false;
+            passField.readOnly = false;
+            
+            // 延遲 0.5 秒，等待 EXE 載入完畢後強制抓取游標
+            setTimeout(() => {
+                userField.focus();
+            }, 500);
+        }
     }
 
 
@@ -2689,7 +2637,6 @@
         let ageText = document.getElementById('nav-age-disp').innerText; let age = ageText.replace("保險年齡: ", "").trim();
         let printDiv = document.getElementById('print-body-content'); printDiv.innerHTML = '';
         const getHeader = (title) => `<div class="print-header-content"><div class="ph-left"><img src="./logo.png" alt="Logo" class="ph-logo-img"></div><div class="ph-center">${title}</div><div class="ph-right">被保險人：${insured}<br>${gender} / ${age} 歲<br>製表日：${new Date().toLocaleDateString()}</div></div>`;
-
         const wrapInTable = (headerHtml, contentHtml) => { return `<table style="width:100%; border:none; border-collapse:collapse;"><thead><tr><td style="border:none; padding:0;">${headerHtml}</td></tr></thead><tbody><tr><td style="border:none; padding:0;">${contentHtml}</td></tr></tbody></table>`; };
 
         if (mode === 'single') {
@@ -2713,7 +2660,9 @@
             p2.innerHTML = wrapInTable(getHeader("建議加保商品明細"), listContent);
             printDiv.appendChild(p2);
         }
-        setTimeout(() => { window.print(); }, 100);
+        setTimeout(() => { 
+            window.print(); 
+        }, 800);
     }
 
     function generateSummaryTable() {
@@ -2978,16 +2927,14 @@
             // 1. 清除登入狀態
             sessionStorage.removeItem('isLoggedIn');
             
-            // 2. 顯示登入遮罩 (這行其實可以不用，因為下面會 reload)
-            document.getElementById('login-overlay').style.display = 'flex';
-            
-            // 3. 清空輸入框
+            // 2. 清空輸入框
             document.getElementById('login-user').value = '';
             document.getElementById('login-pass').value = '';
             
-            // 4. ✅ 強制重新整理頁面 (這行最重要！請取消註解)
-            // 這會讓 EXE 重新載入整個網頁，解決所有卡死問題
-            location.reload(); 
+            // 3. 強制重新載入 (這會觸發 init 裡的強制聚焦)
+            // 使用 window.location.href 賦值是一種更強制的重整方式
+            window.location.href = window.location.href;
+            window.location.reload(); 
         }
     }
 
