@@ -450,8 +450,8 @@
         .transaction-block { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 15px; position: relative; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .transaction-block.locked { background: #f8fafc; border-color: #e2e8f0; }
         .transaction-block.locked input, .transaction-block.locked select, .transaction-block.locked textarea { pointer-events: none; background: #f1f5f9; color: #64748b; border-color: transparent; }
-        .transaction-block.locked .policy-item { pointer-events: none; opacity: 0.7; }
-        .transaction-block.locked .policy-item.active { background: #dbeafe; color: #1e40af; }
+        .transaction-block.locked .policy-item-mini { pointer-events: none; opacity: 0.7; }
+		.transaction-block.locked .policy-item-mini.active { background: #dbeafe; color: #1e40af; }
         .trans-toolbar { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 5; }
         .btn-icon { padding: 4px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; background: white; display: flex; align-items: center; gap: 3px; }
         .btn-icon:hover { background: #f1f5f9; }
@@ -476,73 +476,49 @@
 
 		  html, body {
 			height: auto !important;
-			width: auto !important;          /* 不要用 vw */
+			width: auto !important;
 			margin: 0 !important;
 			padding: 0 !important;
 			overflow: visible !important;
 			background: #fff !important;
 			-webkit-print-color-adjust: exact !important;
 			print-color-adjust: exact !important;
-			zoom: 1 !important;              /* iPad 不要靠 zoom */
+			zoom: 1 !important;
 		  }
 
-		  *, *::before, *::after { box-sizing: border-box !important; }
-
-		  /* 只印列印容器 */
-		  .navbar, .page-container, .crm-action-bar, .print-btn-group,
-		  .btn, button, .tab-btn, .nav-info, .sidebar, header, footer,
-		  .print-footer-real { display: none !important; } /* 關掉舊 fixed footer */
-
-		  #print-container, #print-body-content {
+		  /* 只顯示列印容器（iPad 最穩） */
+		  body * { visibility: hidden !important; }
+		  #print-container, #print-container * { visibility: visible !important; }
+		  #print-container {
 			display: block !important;
-			position: static !important;
+			position: absolute !important;
+			left: 0 !important;
+			top: 0 !important;
 			width: 100% !important;
-			max-width: 190mm !important;     /* 防止右側裁切 */
+		  }
+
+		  #print-body-content {
+			width: 100% !important;
+			max-width: 190mm !important;
 			margin: 0 auto !important;
 			padding: 0 !important;
 			overflow: visible !important;
 		  }
 
-		  .print-doc {
-			width: 100% !important;
-			border-collapse: collapse !important;
-		  }
+		  *, *::before, *::after { box-sizing: border-box !important; }
 
 		  thead { display: table-header-group; }
 		  tfoot { display: table-footer-group; }
 
-		  .print-header-content {
-			width: 100%;
-			height: 30mm;
-			border-bottom: 2px solid #000;
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-end;
-			padding-bottom: 5px;
-			margin-bottom: 10px;
-			background: #fff;
-		  }
-		  .ph-logo-img { max-height: 45px; width: auto; }
-		  .ph-center { font-size: 22px; font-weight: 800; color: #c0392b; line-height: 1.2; }
-		  .ph-right  { text-align: right; font-size: 10px; line-height: 1.2; }
+		  .indep-container { overflow: visible !important; }
 
-		  .print-footer {
-			border-top: 2px solid #c0392b;
-			font-size: 10px;
-			padding-top: 4px;
-			display: flex;
-			justify-content: space-between;
-			gap: 10px;
-		  }
-		  .print-footer .pf-right { text-align: right; }
-
-		  /* 防止 grid/flex 撐爆紙寬 */
 		  img { max-width: 100% !important; height: auto !important; }
 		  td, th, div, span { overflow-wrap: anywhere !important; word-break: break-word !important; }
-		  .roof-container, .house-grid, .room, .room-body, .item-row, .cmp-val-box { min-width: 0 !important; }
+		  .roof-container, .house-grid, .room, .room-body, .item-row, .cmp-val-box,
+		  .item-label, .item-val, .room-header, .roof-box { min-width: 0 !important; }
+		  .item-row { gap: 8px !important; }
 
 		  .page-break { break-before: page; page-break-before: always; }
-
 		  tr, .hc-company-card, .hc-product-item { break-inside: avoid; page-break-inside: avoid; }
 
 		  .indep-matrix-table {
@@ -558,8 +534,7 @@
 			vertical-align: top !important;
 		  }
 		}
-
-      
+ 
         /* === 新增樣式：CRM 鎖定與家族成員 === */
         .input-lock-wrapper { position: relative; width: 100%; }
         .input-lock-wrapper input:disabled { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
@@ -824,14 +799,14 @@
         <div class="navbar">
         <div class="nav-title">🛡️ 客戶保險整合系統 (V30 加密版)</div>
         <div class="nav-tabs">
-            <button class="tab-btn" onclick="switchTab('crm')">📁 保戶 CRM</button>
-            <button class="tab-btn" onclick="switchTab('viewer')">理賠金系統</button>
-            <button class="tab-btn" onclick="switchTab('proposal')">🚀 建議書比較</button>
-            <button class="tab-btn" onclick="switchTab('health')">保單健檢</button>
-            <button class="tab-btn" onclick="switchTab('indep')">獨立理賠</button>
-            <button class="tab-btn active" onclick="switchTab('editor')">保險理賠後台</button>
-            <button class="tab-btn" onclick="switchTab('db')">⚙️ 商品資料庫</button>
-            <button class="tab-btn" onclick="switchTab('settings')">⚙️ 系統設定</button>
+            <button class="tab-btn" onclick="switchTab(event,'crm')">📁 保戶 CRM</button>
+			<button class="tab-btn" onclick="switchTab(event,'viewer')">理賠金系統</button>
+			<button class="tab-btn" onclick="switchTab(event,'proposal')">🚀 建議書比較</button>
+			<button class="tab-btn" onclick="switchTab(event,'health')">保單健檢</button>
+			<button class="tab-btn" onclick="switchTab(event,'indep')">獨立理賠</button>
+			<button class="tab-btn active" onclick="switchTab(event,'editor')">保險理賠後台</button>
+			<button class="tab-btn" onclick="switchTab(event,'db')">⚙️ 商品資料庫</button>
+			<button class="tab-btn" onclick="switchTab(event,'settings')">⚙️ 系統設定</button>
         </div>
         
         <!-- 修改這裡：把資訊列跟登出按鈕包在一起 -->
@@ -1440,20 +1415,23 @@
     }
 
 
-    function switchTab(tabId) {
-        document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
-        const target = document.getElementById('page-' + tabId); target.classList.add('active');
-        if (tabId === 'crm') target.style.display = 'flex'; else target.style.display = 'block';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active');
-        
-        if(tabId === 'viewer') renderViewer();
-        if(tabId === 'health') renderHealthCheck();
-        if(tabId === 'indep') renderIndepClaims();
-        if(tabId === 'db') renderDbList();
-        if(tabId === 'proposal') renderProposal();
-        // ★ 加入這行
-        if(tabId === 'settings') loadSettingsToForm();
-    }
+    function switchTab(e, tabId) {
+	  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+	  const target = document.getElementById('page-' + tabId);
+	  target.classList.add('active');
+	  target.style.display = (tabId === 'crm') ? 'flex' : 'block';
+
+	  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+	  if (e && e.target) e.target.classList.add('active');
+
+	  if(tabId === 'viewer') renderViewer();
+	  if(tabId === 'health') renderHealthCheck();
+	  if(tabId === 'indep') renderIndepClaims();
+	  if(tabId === 'db') renderDbList();
+	  if(tabId === 'proposal') renderProposal();
+	  if(tabId === 'settings') loadSettingsToForm();
+	}
+
 
 
     // ★ 鎖定功能邏輯
@@ -2259,7 +2237,7 @@
                     <div class="form-group"><label>投保年齡 (自動)</label><input type="text" id="eff-age-${cIdx}" value="${comp.effAge || ''}" readonly style="background:#e8f8f5; color:#27ae60; font-weight:bold;"></div>
                 </div>
                 <div style="background:#fff3cd; padding:8px; margin-bottom:10px; border-radius:4px; border:1px solid #ffeeba; display:flex; align-items:center; gap:10px;">
-                    <span style="font-weight:bold; color:#856404;">📥 匯入模板：</span><select style="flex:1;" onchange="importProductFromLib(${cIdx}, this)">${quickImportOpts}</select><button class="btn btn-dark" style="font-size:12px;" onclick="switchTab('db')">去新增模板</button>
+                    <span style="font-weight:bold; color:#856404;">📥 匯入模板：</span><select style="flex:1;" onchange="importProductFromLib(${cIdx}, this)">${quickImportOpts}</select><button class="btn btn-dark" style="font-size:12px;" onclick="switchTab(event,'db')">去新增模板</button>
                 </div>
                 <div id="products-area-${cIdx}" class="products-area"></div>
                 <div style="margin-top:10px; text-align:center;"><button class="btn btn-success" style="width:100%; padding:8px;" onclick="addProduct(${cIdx})">+ 新增空白商品</button></div>`;
@@ -2800,11 +2778,29 @@
 		`;
 
         if (mode === 'single') {
-            if(document.getElementById('page-health').classList.contains('active')) { renderHealthCheck(); let header = getHeader("保單詳細內容檢視"); let content = document.getElementById('health-check-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); } 
-            else if(document.getElementById('page-indep').classList.contains('active')) { renderIndepClaims(); let header = getHeader("各家保險理賠彙整表"); let content = document.getElementById('indep-claims-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); }
-            else { printDiv.innerHTML = getHeader("保單理賠權益分析表"); let houseClone = document.getElementById('house-visual').cloneNode(true); printDiv.appendChild(houseClone); }
-        } else if (mode === 'cross') {
-            printDiv.innerHTML = getHeader("保險房子理賠總表"); let summaryHtml = generateSummaryTable(); printDiv.innerHTML += summaryHtml; printDiv.innerHTML += getAdviceHtml();
+		  if (document.getElementById('page-health').classList.contains('active')) {
+			renderHealthCheck();
+			const header = getHeader("保單詳細內容檢視");
+			const content = document.getElementById('health-check-content').innerHTML;
+			printDiv.innerHTML = wrapInTable(header, content);
+
+		  } else if (document.getElementById('page-indep').classList.contains('active')) {
+			renderIndepClaims();
+			const header = getHeader("各家保險理賠彙整表");
+			const content = document.getElementById('indep-claims-content').innerHTML;
+			printDiv.innerHTML = wrapInTable(header, content);
+
+		  } else {
+			const header = getHeader("保單理賠權益分析表");
+			const houseHtml = document.getElementById('house-visual').outerHTML;
+			printDiv.innerHTML = wrapInTable(header, houseHtml);
+		  }
+
+		} else if (mode === 'cross') {
+		  printDiv.innerHTML = getHeader("保險房子理賠總表");
+		  const summaryHtml = generateSummaryTable();
+		  printDiv.innerHTML += summaryHtml;
+		  printDiv.innerHTML += getAdviceHtml();
         } else if (mode === 'merge') {
             let p1 = document.createElement('div'); p1.style.pageBreakAfter = "always"; p1.innerHTML = getHeader("保單理賠權益分析表"); p1.appendChild(document.getElementById('house-visual').cloneNode(true)); printDiv.appendChild(p1);
             let p2 = document.createElement('div'); p2.style.pageBreakAfter = "always"; p2.innerHTML = getHeader("保險房子理賠總表") + generateSummaryTable() + getAdviceHtml(); printDiv.appendChild(p2);
