@@ -472,30 +472,39 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 全域設定 (針對 iPad 縮放) === */
-            @page {
-                size: A4 portrait;
-                margin: 0; /* 嘗試歸零，讓 iPad 系統邊界接手 */
-            }
-
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                background: white;
-                margin: 0;
-                padding: 10px; /* 稍微留白避免貼邊 */
+            /* === 1. 解除 App 鎖定 (解決空白的關鍵) === */
+            html, body {
+                height: auto !important;        /* 允許高度自動延伸 */
+                overflow: visible !important;   /* 允許內容溢出 (顯示出來) */
+                display: block !important;      /* 取消 Flex 佈局 */
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 width: 100% !important;
-                /* 【關鍵】縮小至 80%，解決所有「太高」與「爆頁」問題 */
+                /* iPad 縮放比例，維持 0.8 效果最好 */
                 zoom: 0.8 !important; 
             }
 
-            /* === 2. 隱藏無關元素 === */
+            /* === 2. 隱藏原本的 App 介面 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
-            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
+            .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay,
+            .print-footer-real { /* 暫時隱藏原本的 footer，避免位置跑掉，下面重新定義 */
                 display: none !important; 
             }
 
-            /* === 3. 頁首與頁尾 (緊湊化) === */
+            /* === 3. 顯示列印容器 (絕對定位確保在最上方) === */
+            #print-container {
+                display: block !important;
+                position: absolute !important;
+                top: 0;
+                left: 0;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important; /* 稍微留白 */
+                z-index: 9999;
+            }
+
+            /* === 4. 頁首設定 === */
             .print-header-content {
                 width: 100%;
                 border-bottom: 2px solid #c0392b;
@@ -503,50 +512,44 @@
                 justify-content: space-between;
                 align-items: flex-end;
                 padding-bottom: 2px;
-                margin-bottom: 5px; /* 減少間距 */
+                margin-bottom: 10px;
             }
             .ph-logo-img { height: 30px; width: auto; }
             .ph-center { font-size: 18px; font-weight: bold; color: #c0392b; }
-            .ph-right { font-size: 9px; }
+            .ph-right { font-size: 9px; text-align: right; }
 
+            /* === 5. 頁尾設定 (固定在每頁底部) === */
             .print-footer-real {
                 display: flex !important;
                 position: fixed;
                 bottom: 0;
+                left: 0;
                 width: 100%;
                 border-top: 1px solid #ccc;
                 font-size: 9px;
                 justify-content: space-between;
                 padding-top: 2px;
                 background: white;
+                z-index: 9999;
             }
 
-            /* === 4. 保險房子 (修正置中與左右排列) === */
+            /* === 6. 保險房子 (左右排版修正) === */
             .house-grid {
                 display: flex !important;
                 flex-wrap: wrap !important;
-                justify-content: space-between !important; /* 確保左右分開 */
+                justify-content: space-between !important;
                 width: 100% !important;
                 margin: 0 auto 5px auto;
             }
 
             .room {
-                /* 【關鍵】強制左右各 48%，留 4% 間隙 */
-                flex: 0 0 48% !important; 
+                flex: 0 0 48% !important; /* 強制左右各 48% */
                 width: 48% !important;
                 margin-bottom: 8px !important;
-                
-                /* 去除外框 */
-                border: none !important;
+                border: none !important;  /* 去除外框 */
                 box-shadow: none !important;
                 background: white !important;
-                
-                /* 【關鍵】內容置中設定 */
-                text-align: center !important; 
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important; /* 水平置中 */
-                
+                text-align: center !important;
                 break-inside: avoid !important;
             }
 
@@ -556,50 +559,52 @@
                 width: 100% !important;
             }
 
-            /* 讓房間內的表格文字也置中 */
-            .room table { margin: 0 auto !important; width: 100% !important; }
-            .room td, .room th { text-align: center !important; }
-
-            /* === 5. 表格通用設定 (極限壓縮) === */
+            /* === 7. 表格與文字優化 === */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
                 table-layout: fixed !important;
-                margin-bottom: 5px !important;
             }
 
             th, td {
-                border: 1px solid #888 !important; /* 保持內線 */
-                padding: 1px 2px !important; /* 【關鍵】極小內距 */
+                border: 1px solid #888 !important;
+                padding: 1px 2px !important;
                 font-size: 8pt !important;
-                line-height: 1.1 !important; /* 壓低行高 */
+                line-height: 1.1 !important;
                 word-wrap: break-word !important;
+                text-align: center !important; /* 強制置中 */
             }
 
-            /* === 6. 針對「保單詳細內容檢視」 (字體縮小) === */
-            /* 針對獨立產品列表的特別設定 */
+            /* 針對詳細列表縮小字體 */
             .indep-matrix-table th, .indep-matrix-table td, 
             .hc-prod-row .hc-cell {
-                font-size: 7pt !important; /* 【關鍵】字改小 */
-                padding: 1px !important;
+                font-size: 7pt !important;
             }
 
-            /* === 7. 針對「各家保險理賠彙整表」 (高度壓縮) === */
+            /* 針對彙整表 */
             .summary-table td {
                 padding: 1px 3px !important;
                 font-size: 7.5pt !important;
-                height: auto !important; /* 允許高度自動縮小 */
-            }
-            
-            /* === 8. 顏色強制顯示 === */
-            .bg-med, .bg-acc, .bg-crit, .bg-can {
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
             }
 
-            /* 頁面控制 */
+            /* === 8. 顏色強制輸出 === */
+            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can {
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* 建議加保的高亮顏色 */
+            .hc-company-card.is-new .hc-header-row,
+            th.indep-header-comp.is-new,
+            td.indep-val-cell.is-new {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* 分頁控制 */
             .page-break { page-break-before: always; }
-            tr { break-inside: avoid; }
+            tr, .hc-company-card, .advice-container { break-inside: avoid; }
         }
 
       
