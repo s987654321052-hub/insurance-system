@@ -472,137 +472,134 @@
         .print-footer-real { display: none; }
 
         @media print {
-            /* === 1. 頁面與全域設定 === */
-            @page { 
-                size: A4 portrait; 
-                margin: 5mm; /* 縮小邊界以爭取高度 */
-            }
-            
-            body { 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-                background: white; 
-                padding: 0; 
-                margin: 0; 
-                width: 100% !important;
-                height: 100% !important;
-                zoom: 0.85 !important; /* 【關鍵】縮小至 85% 以確保單頁 */
+            /* === 1. 全域設定 (針對 iPad 縮放) === */
+            @page {
+                size: A4 portrait;
+                margin: 0; /* 嘗試歸零，讓 iPad 系統邊界接手 */
             }
 
-            /* === 2. 隱藏 UI === */
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: white;
+                margin: 0;
+                padding: 10px; /* 稍微留白避免貼邊 */
+                width: 100% !important;
+                /* 【關鍵】縮小至 80%，解決所有「太高」與「爆頁」問題 */
+                zoom: 0.8 !important; 
+            }
+
+            /* === 2. 隱藏無關元素 === */
             .navbar, .page-container, .crm-action-bar, .print-btn-group, 
             .btn, button, .tab-btn, .nav-info, #login-overlay, #change-pwd-overlay { 
                 display: none !important; 
             }
 
-            /* === 3. 佈局容器 === */
-            #print-container { 
-                display: block; 
-                width: 100%; 
-                margin: 0; 
-            } 
-
-            /* === 4. 頁首設定 (保留您的設定) === */
-            .print-header-content { 
-                width: 100%; 
-                height: auto; /* 改為 auto 避免佔用太多固定高度 */
-                min-height: 25mm;
-                border-bottom: 2px solid #c0392b; /* 改用紅色線條呼應 */
-                display: flex; 
-                justify-content: space-between; 
-                align-items: flex-end; 
-                padding-bottom: 5px; 
-                margin-bottom: 10px; 
-                background: #fff; 
+            /* === 3. 頁首與頁尾 (緊湊化) === */
+            .print-header-content {
+                width: 100%;
+                border-bottom: 2px solid #c0392b;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding-bottom: 2px;
+                margin-bottom: 5px; /* 減少間距 */
             }
-            .ph-logo-img { max-height: 40px; width: auto; }
-            .ph-center { font-size: 20px; font-weight: bold; color: #c0392b; line-height: 1.2; }
-            .ph-right { text-align: right; font-size: 10px; line-height: 1.2; }
+            .ph-logo-img { height: 30px; width: auto; }
+            .ph-center { font-size: 18px; font-weight: bold; color: #c0392b; }
+            .ph-right { font-size: 9px; }
 
-            /* === 5. 頁尾設定 (保留您的設定) === */
-            .print-footer-real { 
-                display: flex !important; 
-                position: fixed; 
-                bottom: 0; 
-                left: 0; 
-                width: 100%; 
-                height: 30px; 
-                background: #fff; 
-                border-top: 1px solid #ccc; 
-                justify-content: space-between; 
-                align-items: center; 
-                font-size: 10px; 
-                z-index: 9999; 
+            .print-footer-real {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                border-top: 1px solid #ccc;
+                font-size: 9px;
+                justify-content: space-between;
+                padding-top: 2px;
+                background: white;
             }
 
-            /* === 6. 保險房子核心佈局 (修正版) === */
-            .house-grid { 
+            /* === 4. 保險房子 (修正置中與左右排列) === */
+            .house-grid {
                 display: flex !important;
                 flex-wrap: wrap !important;
-                justify-content: space-between !important;
-                width: 100% !important; 
-                margin: 0 auto 10px auto; 
-                zoom: 1 !important; /* 避免重複縮放 */
-            }
-
-            .roof-container {
-                display: flex !important;
-                justify-content: space-between !important;
+                justify-content: space-between !important; /* 確保左右分開 */
                 width: 100% !important;
-                margin-bottom: 5px;
+                margin: 0 auto 5px auto;
             }
 
-            /* 【重點修改】房間去框線設定 */
             .room {
-                flex: 0 0 49% !important; /* 強制左右並排 */
-                width: 49% !important;
-                margin-bottom: 10px !important;
-                border: none !important; /* 【這裡去除了外框】 */
+                /* 【關鍵】強制左右各 48%，留 4% 間隙 */
+                flex: 0 0 48% !important; 
+                width: 48% !important;
+                margin-bottom: 8px !important;
+                
+                /* 去除外框 */
+                border: none !important;
                 box-shadow: none !important;
                 background: white !important;
+                
+                /* 【關鍵】內容置中設定 */
+                text-align: center !important; 
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important; /* 水平置中 */
+                
                 break-inside: avoid !important;
             }
-            
+
             /* 癌症區塊跨欄 */
             .room[style*="span 2"] {
                 flex: 0 0 100% !important;
                 width: 100% !important;
             }
 
-            /* === 7. 表格優化 (防止炸裂) === */
+            /* 讓房間內的表格文字也置中 */
+            .room table { margin: 0 auto !important; width: 100% !important; }
+            .room td, .room th { text-align: center !important; }
+
+            /* === 5. 表格通用設定 (極限壓縮) === */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
-                table-layout: fixed !important; /* 固定寬度 */
+                table-layout: fixed !important;
+                margin-bottom: 5px !important;
             }
-            
-            /* 表格內線條 (保留，確保數據可讀) */
-            th, td, .hc-cell {
-                border: 1px solid #888 !important;
-                padding: 2px 4px !important;
-                font-size: 9pt !important;
+
+            th, td {
+                border: 1px solid #888 !important; /* 保持內線 */
+                padding: 1px 2px !important; /* 【關鍵】極小內距 */
+                font-size: 8pt !important;
+                line-height: 1.1 !important; /* 壓低行高 */
                 word-wrap: break-word !important;
             }
 
-            /* === 8. 顏色與其他設定 === */
-            .bg-med, .bg-acc, .bg-crit, .bg-can, .roof-life, .roof-acc, .roof-can { 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-                color: white !important; 
+            /* === 6. 針對「保單詳細內容檢視」 (字體縮小) === */
+            /* 針對獨立產品列表的特別設定 */
+            .indep-matrix-table th, .indep-matrix-table td, 
+            .hc-prod-row .hc-cell {
+                font-size: 7pt !important; /* 【關鍵】字改小 */
+                padding: 1px !important;
             }
 
-            .advice-container { 
-                border: 2px solid #2c3e50 !important; 
-                break-inside: avoid;
+            /* === 7. 針對「各家保險理賠彙整表」 (高度壓縮) === */
+            .summary-table td {
+                padding: 1px 3px !important;
+                font-size: 7.5pt !important;
+                height: auto !important; /* 允許高度自動縮小 */
             }
             
-            /* 分頁控制 */
+            /* === 8. 顏色強制顯示 === */
+            .bg-med, .bg-acc, .bg-crit, .bg-can {
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+
+            /* 頁面控制 */
             .page-break { page-break-before: always; }
             tr { break-inside: avoid; }
-            
-            /* 獨立產品表格修正 */
-            .indep-matrix-table { width: 100%; border-collapse: collapse !important; border: 2px solid #000 !important; margin-bottom: 10px; }
-            .indep-matrix-table th, .indep-matrix-table td { border: 1px solid #000 !important; font-size: 8pt; padding: 2px; }
         }
 
       
