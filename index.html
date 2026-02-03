@@ -659,6 +659,25 @@
             width: 350px;
             border-top: 5px solid #3498db;
         }
+		/* === 新增：PDF 生成專用樣式 === */
+		.pdf-generating {
+			display: block !important;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 210mm; /* A4 寬度 */
+			min-height: 297mm;
+			background: white;
+			z-index: -9999; /* 隱藏在背景生成 */
+			padding: 10mm; /* 模擬邊距 */
+			box-sizing: border-box;
+		}
+		/* 強制顯示背景色 (解決截圖時顏色消失問題) */
+		.pdf-generating * {
+			-webkit-print-color-adjust: exact !important;
+			print-color-adjust: exact !important;
+		}
+
     </style>
 </head>
 <body>
@@ -981,9 +1000,9 @@
                 </div>
                 <div>
                     <div class="print-btn-group">
-                        <button class="btn btn-dark" onclick="doPrint('single')">🖨️ 列印理賠權益表</button>
-                        <button class="btn btn-warning" onclick="doPrint('cross')">📊 列印十字總表</button>
-                        <button class="btn btn-purple" onclick="doPrint('merge')">📑 合併列印 (全套)</button>
+                        <button class="btn btn-dark" onclick="generateReport('single', 'pdf')">📥 下載理賠權益表 (PDF)</button>
+						<button class="btn btn-warning" onclick="generateReport('cross', 'pdf')">📥 下載十字總表 (PDF)</button>
+						<button class="btn btn-purple" onclick="generateReport('merge', 'pdf')">📑 下載全套報告 (PDF)</button>
                     </div>
                     <div id="house-visual">
                         <div class="roof-container">
@@ -1056,7 +1075,7 @@
         <!-- === Proposal Page (建議書比較) === -->
         <div id="page-proposal" class="page">
             <div class="print-btn-group">
-                <button class="btn btn-dark" onclick="doPrint('proposal')">🖨️ 列印建議書</button>
+                <button class="btn btn-dark" onclick="generateReport('proposal', 'pdf')">📥 下載建議書 (PDF)</button>
             </div>
             
             <div style="max-width:1200px; margin:0 auto;">
@@ -1073,13 +1092,15 @@
 
         <!-- === Health Check Page === -->
         <div id="page-health" class="page">
-            <div class="print-btn-group"><button class="btn btn-dark" onclick="doPrint('single')">🖨️ 單頁列印</button><button class="btn btn-purple" onclick="doPrint('merge')">📑 合併列印 (全套)</button></div>
+            <div class="print-btn-group"><button class="btn btn-dark" onclick="generateReport('single', 'pdf')">📥 下載單頁 (PDF)</button>
+				<button class="btn btn-purple" onclick="generateReport('merge', 'pdf')">📑 下載全套 (PDF)</button></div>
             <div class="hc-container" id="health-check-content"></div>
         </div>
 
         <!-- === Independent Claims Page === -->
         <div id="page-indep" class="page">
-            <div class="print-btn-group"><button class="btn btn-dark" onclick="doPrint('single')">🖨️ 單頁列印</button><button class="btn btn-purple" onclick="doPrint('merge')">📑 合併列印 (全套)</button></div>
+            <div class="print-btn-group"><button class="btn btn-dark" onclick="generateReport('single', 'pdf')">📥 下載單頁 (PDF)</button>
+    <button class="btn btn-purple" onclick="generateReport('merge', 'pdf')">📑 下載全套 (PDF)</button></div>
             <div class="indep-container" id="indep-claims-content"></div>
         </div>
 
@@ -1102,6 +1123,8 @@
     </div>
     <!-- 在 <head> 裡面加入這行 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- === 登入遮罩 (Login Overlay) === -->
     <div id="login-overlay">
         <div class="login-card">
@@ -2613,38 +2636,172 @@
         updateJSON();
     }
 
-    function doPrint(mode) {
+        // === 新版報表生成與 PDF 下載邏輯 ===
+    
+    // 統一入口：action 可為 'print' (瀏覽器列印) 或 'pdf' (下載檔案)
+    async function generateReport(mode, action = 'print') {
         let proposer = document.getElementById('appName').value || document.getElementById('insuredName').value || "客戶";
         let insured = document.getElementById('insuredName').value || "客戶";
         let gender = document.getElementById('insuredGender').value || "";
-        let ageText = document.getElementById('nav-age-disp').innerText; let age = ageText.replace("保險年齡: ", "").trim();
-        let printDiv = document.getElementById('print-body-content'); printDiv.innerHTML = '';
-        const getHeader = (title) => `<div class="print-header-content"><div class="ph-left"><img src="./logo.png" alt="Logo" class="ph-logo-img"></div><div class="ph-center">${title}</div><div class="ph-right">被保險人：${insured}<br>${gender} / ${age} 歲<br>製表日：${new Date().toLocaleDateString()}</div></div>`;
+        let ageText = document.getElementById('nav-age-disp').innerText; 
+        let age = ageText.replace("保險年齡: ", "").trim();
+        
+        let printDiv = document.getElementById('print-body-content'); 
+        printDiv.innerHTML = '';
+
+        // 表頭產生器
+        const getHeader = (title) => `<div class="print-header-content"><div class="ph-left"><img src="./logo.png" alt="Logo" class="ph-logo-img" onerror="this.style.display='none'"></div><div class="ph-center">${title}</div><div class="ph-right">被保險人：${insured}<br>${gender} / ${age} 歲<br>製表日：${new Date().toLocaleDateString()}</div></div>`;
+        
+        // 表格包裝器 (避免內容散掉)
         const wrapInTable = (headerHtml, contentHtml) => { return `<table style="width:100%; border:none; border-collapse:collapse;"><thead><tr><td style="border:none; padding:0;">${headerHtml}</td></tr></thead><tbody><tr><td style="border:none; padding:0;">${contentHtml}</td></tr></tbody></table>`; };
 
+        // 依據模式產生內容
         if (mode === 'single') {
-            if(document.getElementById('page-health').classList.contains('active')) { renderHealthCheck(); let header = getHeader("保單詳細內容檢視"); let content = document.getElementById('health-check-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); } 
-            else if(document.getElementById('page-indep').classList.contains('active')) { renderIndepClaims(); let header = getHeader("各家保險理賠彙整表"); let content = document.getElementById('indep-claims-content').innerHTML; printDiv.innerHTML = wrapInTable(header, content); }
-            else { printDiv.innerHTML = getHeader("保單理賠權益分析表"); let houseClone = document.getElementById('house-visual').cloneNode(true); printDiv.appendChild(houseClone); }
+            if(document.getElementById('page-health').classList.contains('active')) { 
+                renderHealthCheck(); 
+                let header = getHeader("保單詳細內容檢視"); 
+                let content = document.getElementById('health-check-content').innerHTML; 
+                printDiv.innerHTML = wrapInTable(header, content); 
+            } else if(document.getElementById('page-indep').classList.contains('active')) { 
+                renderIndepClaims(); 
+                let header = getHeader("各家保險理賠彙整表"); 
+                let content = document.getElementById('indep-claims-content').innerHTML; 
+                printDiv.innerHTML = wrapInTable(header, content); 
+            } else { 
+                printDiv.innerHTML = getHeader("保單理賠權益分析表"); 
+                let houseClone = document.getElementById('house-visual').cloneNode(true); 
+                printDiv.appendChild(houseClone); 
+            }
         } else if (mode === 'cross') {
-            printDiv.innerHTML = getHeader("保險房子理賠總表"); let summaryHtml = generateSummaryTable(); printDiv.innerHTML += summaryHtml; printDiv.innerHTML += getAdviceHtml();
+            printDiv.innerHTML = getHeader("保險房子理賠總表"); 
+            let summaryHtml = generateSummaryTable(); 
+            printDiv.innerHTML += summaryHtml; 
+            printDiv.innerHTML += getAdviceHtml();
         } else if (mode === 'merge') {
-            let p1 = document.createElement('div'); p1.style.pageBreakAfter = "always"; p1.innerHTML = getHeader("保單理賠權益分析表"); p1.appendChild(document.getElementById('house-visual').cloneNode(true)); printDiv.appendChild(p1);
-            let p2 = document.createElement('div'); p2.style.pageBreakAfter = "always"; p2.innerHTML = getHeader("保險房子理賠總表") + generateSummaryTable() + getAdviceHtml(); printDiv.appendChild(p2);
-            let p3 = document.createElement('div'); p3.style.pageBreakAfter = "always"; renderHealthCheck(); let hcHeader = getHeader("保單詳細內容檢視"); let hcContent = document.getElementById('health-check-content').innerHTML; p3.innerHTML = wrapInTable(hcHeader, hcContent); printDiv.appendChild(p3);
-            let p4 = document.createElement('div'); renderIndepClaims(); let indepHeader = getHeader("各家保險理賠彙整表"); let indepContent = document.getElementById('indep-claims-content').innerHTML; p4.innerHTML = wrapInTable(indepHeader, indepContent); printDiv.appendChild(p4);
+            // 頁面 1: 權益分析
+            let p1 = document.createElement('div'); 
+            p1.className = "pdf-page"; // 標記為分頁
+            p1.style.pageBreakAfter = "always"; 
+            p1.innerHTML = getHeader("保單理賠權益分析表"); 
+            p1.appendChild(document.getElementById('house-visual').cloneNode(true)); 
+            printDiv.appendChild(p1);
+            
+            // 頁面 2: 總表與建議
+            let p2 = document.createElement('div'); 
+            p2.className = "pdf-page";
+            p2.style.pageBreakAfter = "always"; 
+            p2.innerHTML = getHeader("保險房子理賠總表") + generateSummaryTable() + getAdviceHtml(); 
+            printDiv.appendChild(p2);
+            
+            // 頁面 3: 健檢明細
+            let p3 = document.createElement('div'); 
+            p3.className = "pdf-page";
+            p3.style.pageBreakAfter = "always"; 
+            renderHealthCheck(); 
+            let hcHeader = getHeader("保單詳細內容檢視"); 
+            let hcContent = document.getElementById('health-check-content').innerHTML; 
+            p3.innerHTML = wrapInTable(hcHeader, hcContent); 
+            printDiv.appendChild(p3);
+            
+            // 頁面 4: 獨立理賠
+            let p4 = document.createElement('div'); 
+            p4.className = "pdf-page";
+            renderIndepClaims(); 
+            let indepHeader = getHeader("各家保險理賠彙整表"); 
+            let indepContent = document.getElementById('indep-claims-content').innerHTML; 
+            p4.innerHTML = wrapInTable(indepHeader, indepContent); 
+            printDiv.appendChild(p4);
+
         } else if (mode === 'proposal') {
             renderProposal();
+            let p1 = document.createElement('div');
+            p1.className = "pdf-page";
+            p1.style.pageBreakAfter = "always";
             let header = getHeader("保險規劃建議書 (前後比較)");
             let houseContent = document.getElementById('proposal-house-container').innerHTML;
-            printDiv.innerHTML = wrapInTable(header, houseContent);
-            let p2 = document.createElement('div'); p2.style.pageBreakBefore = "always";
+            p1.innerHTML = wrapInTable(header, houseContent);
+            printDiv.appendChild(p1);
+
+            let p2 = document.createElement('div'); 
+            p2.className = "pdf-page";
             let listContent = document.getElementById('proposal-list-container').innerHTML;
             p2.innerHTML = wrapInTable(getHeader("建議加保商品明細"), listContent);
             printDiv.appendChild(p2);
         }
-        setTimeout(() => { window.print(); }, 100);
+
+        // 執行動作
+        if (action === 'print') {
+            setTimeout(() => { window.print(); }, 100);
+        } else if (action === 'pdf') {
+            await downloadPDF(insured, mode);
+        }
     }
+
+    // 核心 PDF 下載函式
+    async function downloadPDF(filename, mode) {
+        const { jsPDF } = window.jspdf;
+        const printContainer = document.getElementById('print-container');
+        const contentDiv = document.getElementById('print-body-content');
+        
+        // 1. 暫時顯示列印區塊以進行截圖
+        printContainer.classList.add('pdf-generating');
+        
+        // 顯示載入中提示 (可選)
+        const originalBtnText = document.activeElement.innerText;
+        document.activeElement.innerText = "⏳ 生成中...";
+        document.activeElement.disabled = true;
+
+        try {
+            const doc = new jsPDF('p', 'mm', 'a4'); // A4 直式
+            const pdfWidth = doc.internal.pageSize.getWidth(); // A4 寬度 (約 210mm)
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // 判斷是否為多頁模式 (Merge 或 Proposal)
+            let pages = [];
+            if (mode === 'merge' || mode === 'proposal') {
+                pages = Array.from(contentDiv.querySelectorAll('.pdf-page'));
+            } else {
+                pages = [contentDiv]; // 單頁模式直接抓整個容器
+            }
+
+            for (let i = 0; i < pages.length; i++) {
+                if (i > 0) doc.addPage(); // 第二頁開始要新增頁面
+
+                // 使用 html2canvas 截圖
+                const canvas = await html2canvas(pages[i], {
+                    scale: 2, // 提高解析度 (2倍)
+                    useCORS: true, // 允許跨域圖片
+                    logging: false,
+                    windowWidth: 1200 // 模擬寬螢幕寬度以防跑版
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = doc.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            }
+
+            // 下載檔案
+            doc.save(`${filename}_保險整合報告_${mode}.pdf`);
+
+        } catch (error) {
+            console.error("PDF 生成失敗", error);
+            alert("PDF 生成失敗，請檢查瀏覽器相容性。");
+        } finally {
+            // 恢復原狀
+            printContainer.classList.remove('pdf-generating');
+            // 恢復按鈕
+            const btns = document.querySelectorAll('.print-btn-group button');
+            btns.forEach(b => {
+                if(b.innerText === "⏳ 生成中...") {
+                    b.innerText = originalBtnText;
+                    b.disabled = false;
+                }
+            });
+        }
+    }
+
 
     function generateSummaryTable() {
         const getVal = (id) => document.getElementById(id) ? document.getElementById(id).innerText : "-";
@@ -3008,8 +3165,6 @@
         alert("✅ 修改成功！下次請使用新帳密登入。");
         closeChangePwdModal();
     }
-
-
 
 </script>
 </body>
