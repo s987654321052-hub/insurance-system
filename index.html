@@ -2014,18 +2014,27 @@
             const pwd = prompt("請設定這份檔案的密碼：");
             if(!pwd) { alert("已取消匯出"); return; }
             
-            // 進行 AES 加密
             const encrypted = CryptoJS.AES.encrypt(content, pwd).toString();
-            // 包裝成特殊格式
             content = JSON.stringify({ isEncrypted: true, data: encrypted });
             fileName = `客戶_${client.insuredName}_加密版.json`;
         }
 
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(content);
+        // === 👇 關鍵修改開始：改用 Blob 優化 iPad 下載 👇 ===
+        const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
-        a.href = dataStr;
+        a.href = url;
         a.download = fileName;
+        document.body.appendChild(a); // Firefox/iPad 有時需要將元素加入 DOM 才能點擊
         a.click();
+        
+        // 清除暫存，釋放記憶體
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
+        // === 👆 關鍵修改結束 👆 ===
     }
     function importSingleClient(input) {
         const file = input.files[0];
@@ -2095,11 +2104,21 @@
             fileName = `保戶備份_${new Date().toISOString().slice(0,10)}_加密版.json`;
         }
 
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(content);
+        // === 👇 關鍵修改開始：改用 Blob 優化 iPad 下載 👇 ===
+        const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
-        a.href = dataStr;
+        a.href = url;
         a.download = fileName;
+        document.body.appendChild(a);
         a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
+        // === 👆 關鍵修改結束 👆 ===
     }
     function importAllClients(input) {
         const file = input.files[0];
